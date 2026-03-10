@@ -148,7 +148,8 @@ body {
 .tp-modern { flex-direction: row; background: white; } .tp-modern .tp-strip { width: 3px; background: var(--navy); } .tp-modern .tp-rest { flex: 1; display: flex; flex-direction: column; padding: 4px; gap: 2px; } .tp-modern .tp-name { height: 3px; width: 20px; background: var(--navy); } .tp-modern .tp-lines { height: 3px; width: 16px; background: #eee; }
 .tp-elegant { display: flex; background: white; } .tp-elegant .tp-elside { width: 12px; background: #e8edf2; } .tp-elegant .tp-elmain { flex: 1; background: white; }
 
-.panel-tabs { display: flex; border-bottom: 2px solid var(--border); background: #fafbfc; flex-shrink: 0; overflow-x: auto; }
+.panel-tabs { display: flex; border-bottom: 2px solid var(--border); background: #fafbfc; flex-shrink: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.panel-tabs::-webkit-scrollbar { display: none; }
 .tab { padding: 12px 14px; border: none; background: none; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: all 0.15s; }
 .tab:hover { color: var(--text); }
 .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
@@ -520,6 +521,7 @@ body {
 .ats-desc { font-size: 9.5px; color: #555; line-height: 1.55; padding-left: 12px; }
 .ats-skill-line { font-size: 10px; color: #444; margin-bottom: 3px; line-height: 1.5; }
 
+/* --- Tablet (<1200px) --- */
 @media (max-width: 1200px) {
     .layout { flex-direction: column; height: auto; }
     .editor-panel { width: 100% !important; min-width: auto; max-height: none; flex: none !important; }
@@ -537,6 +539,84 @@ body {
     .preview-scroll { padding: 16px; }
     .preview-pages-container { gap: 12px; }
     .preview-page { transform: scale(0.6); transform-origin: top center; margin-bottom: -449px; }
+    .preview-page:last-child { margin-bottom: 0; }
+}
+
+/* --- Tablet small (<900px) — hide button labels --- */
+@media (max-width: 900px) {
+    .top-bar { padding: 10px 16px; }
+    .top-bar-right .btn span { display: none; }
+    .top-bar-right .btn { padding: 8px 10px; gap: 0; }
+    .top-bar-right .dropdown-toggle span { display: none; }
+    .top-bar-right .dropdown-toggle { padding: 8px 10px; gap: 4px; }
+    .top-bar h1 .by-guidlab { display: none; }
+    .download-menu { right: -8px; }
+}
+
+/* --- Mobile (<640px) --- */
+@media (max-width: 640px) {
+    .top-bar { padding: 8px 12px; }
+    .top-bar h1 { font-size: 15px; }
+    .top-bar h1 .app-version { font-size: 9px; }
+    .top-bar-right { gap: 4px; }
+    .top-bar-right .btn { padding: 7px 8px; }
+    .top-bar-right .btn svg { width: 14px; height: 14px; }
+    .top-bar-right .dropdown-toggle { padding: 7px 8px; }
+
+    .layout { height: auto; min-height: calc(100vh - 48px); }
+
+    .theme-selector { padding: 8px 12px; gap: 6px; flex-wrap: wrap; }
+    .theme-btn { padding: 6px 8px; font-size: 10px; }
+    .theme-preview { width: 28px; height: 36px; }
+
+    .panel-tabs { gap: 0; }
+    .tab { padding: 10px 10px; font-size: 11px; }
+
+    .tab-content { padding: 14px 12px; }
+
+    .form-row { flex-direction: column; gap: 0; }
+    .form-group { margin-bottom: 10px; }
+    .form-group label { font-size: 11px; margin-bottom: 3px; }
+    .form-group input, .form-group select, .form-group textarea { font-size: 14px; padding: 9px 10px; }
+
+    .contact-row { flex-wrap: wrap; gap: 6px; }
+    .contact-row .contact-type { flex: 1; min-width: 100px; }
+    .contact-row .contact-value { flex: 2; min-width: 140px; }
+
+    .entry-card { padding: 12px; }
+    .entry-card-header { flex-wrap: wrap; gap: 6px; }
+
+    .color-scheme-grid { gap: 6px; }
+    .color-swatch { width: 36px; height: 36px; }
+    .heading-color-grid { gap: 6px; }
+    .font-preset-grid { gap: 6px; }
+
+    .preview-scroll { padding: 10px; }
+    .preview-page { transform: scale(0.48); transform-origin: top center; margin-bottom: -580px; }
+    .preview-page:last-child { margin-bottom: 0; }
+
+    .crop-modal { width: 95vw; max-height: 90vh; padding: 16px; }
+    .crop-container { height: 250px; }
+
+    .confirm-modal { min-width: 260px; max-width: 90vw; padding: 20px; }
+
+    .download-menu { min-width: 200px; right: -4px; }
+
+    .section-order-item { padding: 8px 10px; font-size: 12px; }
+    .cv-lang-btn { padding: 6px 10px; font-size: 11px; }
+}
+
+/* --- Small phone (<400px) --- */
+@media (max-width: 400px) {
+    .top-bar h1 { font-size: 14px; }
+    .top-bar h1 .app-version { display: none; }
+    .top-bar-right .btn { padding: 6px 7px; }
+    .top-bar-right .dropdown-toggle { padding: 6px 7px; }
+
+    .tab { padding: 9px 7px; font-size: 10px; }
+    .tab-content { padding: 12px 10px; }
+
+    .preview-page { transform: scale(0.38); transform-origin: top center; margin-bottom: -690px; }
     .preview-page:last-child { margin-bottom: 0; }
 }
 .date-warning { border-left: 3px solid var(--danger) !important; }
