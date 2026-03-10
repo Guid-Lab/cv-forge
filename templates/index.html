@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CV Forge</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;700&family=Inter:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -83,6 +86,18 @@
                     <div class="theme-preview tp-minimal"><div class="tp-line"></div><div class="tp-body2"></div></div>
                     Minimal
                 </button>
+                <button class="theme-btn" data-theme="executive" onclick="setTheme('executive', this)">
+                    <div class="theme-preview tp-executive"><div class="tp-text"></div><div class="tp-bar"></div><div class="tp-text2"></div></div>
+                    Executive
+                </button>
+                <button class="theme-btn" data-theme="modern" onclick="setTheme('modern', this)">
+                    <div class="theme-preview tp-modern"><div class="tp-strip"></div><div class="tp-rest"><div class="tp-name"></div><div class="tp-lines"></div></div></div>
+                    Modern
+                </button>
+                <button class="theme-btn" data-theme="elegant" onclick="setTheme('elegant', this)">
+                    <div class="theme-preview tp-elegant"><div class="tp-elside"></div><div class="tp-elmain"></div></div>
+                    Elegant
+                </button>
             </div>
 
             <div class="panel-tabs" id="panel-tabs">
@@ -137,16 +152,24 @@
                     </label>
                 </div>
 
-                <h3 style="margin:24px 0 12px;font-size:14px;color:#1a233b"><span id="settings-color-title">Color scheme</span> <span class="pretty-only-badge" id="settings-color-badge">Pretty only</span></h3>
+                <h3 style="margin:24px 0 12px;font-size:14px;color:#1a233b"><span id="settings-color-title">Accent color</span> <span class="pretty-only-badge" id="settings-color-badge">Pretty only</span></h3>
+                <p style="font-size:10px;color:#999;margin-bottom:10px">Bars, section titles, highlights and decorative elements.</p>
                 <div id="color-scheme-list" class="color-scheme-grid"></div>
+
+                <h3 style="margin:24px 0 12px;font-size:14px;color:#1a233b"><span id="settings-heading-title">Heading color</span> <span class="pretty-only-badge">Pretty only</span></h3>
+                <p style="font-size:10px;color:#999;margin-bottom:10px">Section titles, company names, institution names. "Auto" follows accent color.</p>
+                <div id="heading-color-list" class="color-scheme-grid"></div>
+
+                <h3 style="margin:24px 0 12px;font-size:14px;color:#1a233b"><span id="settings-font-title">Font</span> <span class="pretty-only-badge">Pretty only</span></h3>
+                <div id="font-preset-list" class="font-preset-grid"></div>
             </div>
             <div class="tab-content" id="tab-personal">
                 <div class="form-group">
                     <label><span id="lbl-photo">Candidate photo</span> <span style="font-weight:400;color:#999" id="lbl-photo-hint">(optional, Pretty only)</span></label>
                     <div class="photo-upload-area" id="photo-upload-area">
-                        <div class="photo-preview-wrap" id="photo-preview-wrap" style="display:none">
+                        <div class="photo-preview-wrap" id="photo-preview-wrap" style="display:none" onclick="openCropModal()" title="Click to edit photo">
                             <img id="photo-preview-img" src="" alt="Photo">
-                            <button class="photo-remove-btn" onclick="removePhoto()" title="Remove photo">&times;</button>
+                            <button class="photo-remove-btn" onclick="event.stopPropagation();removePhoto()" title="Remove photo">&times;</button>
                         </div>
                         <label class="photo-upload-btn" id="photo-upload-label">
                             <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M14 11v3H2v-3H0v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3h-2zM3 5l1.4 1.4L7 3.8V12h2V3.8l2.6 2.6L13 5 8 0 3 5z" fill="currentColor"/></svg>
@@ -236,6 +259,59 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <div class="confirm-overlay" id="confirm-overlay" style="display:none">
+        <div class="confirm-modal">
+            <div class="confirm-text" id="confirm-text"></div>
+            <div class="confirm-actions">
+                <button class="btn btn-secondary" id="confirm-yes"></button>
+                <button class="btn" style="background:#eee;color:#333" id="confirm-no"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="crop-overlay" id="crop-overlay" style="display:none">
+        <div class="crop-modal">
+            <div class="crop-header">
+                <span>Edit photo</span>
+                <button class="crop-close" onclick="closeCropModal()">&times;</button>
+            </div>
+            <div class="crop-body">
+                <div class="crop-container" id="crop-container">
+                    <img id="crop-img" src="" draggable="false">
+                    <div class="crop-shape-overlay" id="crop-shape-overlay"></div>
+                </div>
+                <div class="crop-controls">
+                    <label>Zoom</label>
+                    <input type="range" id="crop-zoom" min="100" max="300" value="100" oninput="updateCropZoom()">
+                </div>
+                <div class="crop-options">
+                    <div class="crop-opt-group">
+                        <span class="crop-opt-label">Shape</span>
+                        <button class="photo-shape-btn active" data-shape="circle" onclick="setPhotoShape('circle',this)">
+                            <svg width="14" height="14" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg> Circle
+                        </button>
+                        <button class="photo-shape-btn" data-shape="square" onclick="setPhotoShape('square',this)">
+                            <svg width="14" height="14" viewBox="0 0 16 16"><rect x="1" y="1" width="14" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg> Square
+                        </button>
+                    </div>
+                    <div class="crop-opt-group">
+                        <span class="crop-opt-label">Border</span>
+                        <select id="photo-border-color" onchange="updatePhotoBorder()">
+                            <option value="auto">Auto (accent)</option>
+                            <option value="none">None</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="color" id="photo-border-custom" value="#1a233b" onchange="updatePhotoBorder()" style="display:none;width:28px;height:28px;border:none;padding:0;cursor:pointer;border-radius:4px">
+                    </div>
+                </div>
+            </div>
+            <div class="crop-footer">
+                <button class="btn btn-primary" onclick="applyCrop()">Apply</button>
+                <button class="btn" style="background:#eee;color:#333" onclick="closeCropModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     <script src="{{ url_for('static', filename='js/data.js') }}"></script>
     <script src="{{ url_for('static', filename='js/preview.js') }}"></script>

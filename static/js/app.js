@@ -2,6 +2,18 @@ let cvData = {};
 let currentTheme = 'sidebar';
 let previewMode = 'pretty';
 
+function appConfirm(msg, onYes) {
+    const overlay = document.getElementById('confirm-overlay');
+    document.getElementById('confirm-text').textContent = msg;
+    const yesBtn = document.getElementById('confirm-yes');
+    const noBtn = document.getElementById('confirm-no');
+    yesBtn.textContent = _ui('remove') || 'Yes';
+    noBtn.textContent = _ui('cancel') || 'Cancel';
+    overlay.style.display = 'flex';
+    yesBtn.onclick = () => { overlay.style.display = 'none'; onYes(); };
+    noBtn.onclick = () => { overlay.style.display = 'none'; };
+}
+
 let activeLogoMenu = null;
 
 function closeLogoMenu() {
@@ -94,10 +106,11 @@ async function handlePhotoUpload(input) {
     if (dataUrl) {
         collectData();
         cvData.personal.photo = dataUrl;
+        cvData.photo_original = dataUrl;
         updatePhotoPreview();
         updatePreview();
         autoSave();
-        showToast(_ui('toastPhotoAdded'));
+        openCropModal();
     }
     input.value = '';
 }
@@ -105,6 +118,7 @@ async function handlePhotoUpload(input) {
 function removePhoto() {
     collectData();
     cvData.personal.photo = '';
+    cvData.photo_original = '';
     updatePhotoPreview();
     updatePreview();
     autoSave();
@@ -121,6 +135,139 @@ function updatePhotoPreview() {
         img.src = '';
         wrap.style.display = 'none';
     }
+}
+
+function setPhotoShape(shape, btn) {
+    cvData.photo_shape = shape;
+    document.querySelectorAll('.photo-shape-btn').forEach(b => b.classList.toggle('active', b.dataset.shape === shape));
+    updateCropShapeOverlay();
+    updatePreview();
+}
+
+function updatePhotoBorder() {
+    const bc = document.getElementById('photo-border-color');
+    const bcc = document.getElementById('photo-border-custom');
+    cvData.photo_border = bc.value;
+    bcc.style.display = bc.value === 'custom' ? '' : 'none';
+    if (bc.value === 'custom') cvData.photo_border_hex = bcc.value;
+    updatePreview();
+}
+
+let _cropState = { x: 0, y: 0, zoom: 100, dragging: false, startX: 0, startY: 0, origX: 0, origY: 0 };
+
+function openCropModal() {
+    const src = cvData.photo_original || (cvData.personal && cvData.personal.photo);
+    if (!src) return;
+    if (!cvData.photo_original) cvData.photo_original = src;
+    const overlay = document.getElementById('crop-overlay');
+    const img = document.getElementById('crop-img');
+    img.src = cvData.photo_original;
+    _cropState = { x: 0, y: 0, zoom: 100, dragging: false };
+    document.getElementById('crop-zoom').value = 100;
+    const shape = cvData.photo_shape || 'circle';
+    document.querySelectorAll('.photo-shape-btn').forEach(b => b.classList.toggle('active', b.dataset.shape === shape));
+    const bc = document.getElementById('photo-border-color');
+    const bcc = document.getElementById('photo-border-custom');
+    bc.value = cvData.photo_border || 'auto';
+    bcc.style.display = bc.value === 'custom' ? '' : 'none';
+    if (cvData.photo_border_hex) bcc.value = cvData.photo_border_hex;
+    overlay.style.display = 'flex';
+
+    img.onload = () => {
+        updateCropPosition();
+        setupCropDrag();
+        updateCropShapeOverlay();
+    };
+}
+
+function updateCropShapeOverlay() {
+    const overlay = document.getElementById('crop-shape-overlay');
+    const shape = cvData.photo_shape || 'circle';
+    if (shape === 'circle') {
+        overlay.style.borderRadius = '50%';
+    } else {
+        overlay.style.borderRadius = '8%';
+    }
+    overlay.style.boxShadow = '0 0 0 9999px rgba(0,0,0,0.5)';
+    overlay.style.position = 'absolute';
+    const size = Math.min(document.getElementById('crop-container').offsetWidth, document.getElementById('crop-container').offsetHeight);
+    const cw = document.getElementById('crop-container').offsetWidth;
+    const ch = document.getElementById('crop-container').offsetHeight;
+    overlay.style.width = size + 'px';
+    overlay.style.height = size + 'px';
+    overlay.style.left = ((cw - size) / 2) + 'px';
+    overlay.style.top = ((ch - size) / 2) + 'px';
+}
+
+function closeCropModal() {
+    document.getElementById('crop-overlay').style.display = 'none';
+}
+
+function updateCropZoom() {
+    _cropState.zoom = parseInt(document.getElementById('crop-zoom').value);
+    updateCropPosition();
+}
+
+function updateCropPosition() {
+    const container = document.getElementById('crop-container');
+    const img = document.getElementById('crop-img');
+    const cw = container.offsetWidth, ch = container.offsetHeight;
+    const zoom = _cropState.zoom / 100;
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const scale = Math.max(cw / iw, ch / ih) * zoom;
+    const sw = iw * scale, sh = ih * scale;
+    const maxX = Math.max(0, (sw - cw) / 2), maxY = Math.max(0, (sh - ch) / 2);
+    _cropState.x = Math.max(-maxX, Math.min(maxX, _cropState.x));
+    _cropState.y = Math.max(-maxY, Math.min(maxY, _cropState.y));
+    img.style.width = sw + 'px';
+    img.style.height = sh + 'px';
+    img.style.left = ((cw - sw) / 2 + _cropState.x) + 'px';
+    img.style.top = ((ch - sh) / 2 + _cropState.y) + 'px';
+}
+
+function setupCropDrag() {
+    const container = document.getElementById('crop-container');
+    container.onmousedown = e => {
+        e.preventDefault();
+        _cropState.dragging = true;
+        _cropState.startX = e.clientX;
+        _cropState.startY = e.clientY;
+        _cropState.origX = _cropState.x;
+        _cropState.origY = _cropState.y;
+    };
+    document.onmousemove = e => {
+        if (!_cropState.dragging) return;
+        _cropState.x = _cropState.origX + (e.clientX - _cropState.startX);
+        _cropState.y = _cropState.origY + (e.clientY - _cropState.startY);
+        updateCropPosition();
+    };
+    document.onmouseup = () => { _cropState.dragging = false; };
+}
+
+function applyCrop() {
+    const container = document.getElementById('crop-container');
+    const img = document.getElementById('crop-img');
+    const cw = container.offsetWidth, ch = container.offsetHeight;
+    const size = Math.min(cw, ch);
+    const canvas = document.createElement('canvas');
+    canvas.width = 400; canvas.height = 400;
+    const ctx = canvas.getContext('2d');
+    const zoom = _cropState.zoom / 100;
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const scale = Math.max(cw / iw, ch / ih) * zoom;
+    const sw = iw * scale, sh = ih * scale;
+    const imgX = (cw - sw) / 2 + _cropState.x;
+    const imgY = (ch - sh) / 2 + _cropState.y;
+    const cropX = (cw - size) / 2, cropY = (ch - size) / 2;
+    const sx = (cropX - imgX) / scale, sy = (cropY - imgY) / scale;
+    const sSize = size / scale;
+    ctx.drawImage(img, sx, sy, sSize, sSize, 0, 0, 400, 400);
+    cvData.personal.photo = canvas.toDataURL('image/jpeg', 0.9);
+    closeCropModal();
+    updatePhotoPreview();
+    updatePreview();
+    autoSave();
+    showToast('Photo cropped');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -168,10 +315,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             skills: [],
             projects: [],
             courses: [],
-            section_order: ['summary','experience','skills','projects','education','courses','certifications','languages'],
+            section_order: ['summary','experience','projects','education','courses','certifications','languages','skills'],
             disabled_sections: [],
             theme: 'sidebar',
             color_scheme: 'navy',
+            font_preset: 'calibri',
+            heading_color: 'black',
             show_company_logos: true,
             show_cert_logos: true,
             show_lang_flags: true,
@@ -179,6 +328,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     currentTheme = cvData.theme || 'sidebar';
     if (!cvData.color_scheme) cvData.color_scheme = 'navy';
+    if (!cvData.font_preset) cvData.font_preset = 'calibri';
+    if (!cvData.heading_color) cvData.heading_color = 'black';
     if (!cvData.cv_language) cvData.cv_language = 'en';
     if (!cvData.desc_format) cvData.desc_format = 'bullets';
 
@@ -196,7 +347,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!cvData.section_order) cvData.section_order = ['summary','experience','skills','projects','education','courses','certifications','languages'];
     const sectionStrings = cvData.section_order.filter(s => typeof s === 'string');
     const migrations = [
-        { key: 'skills', after: 'experience' },
+        { key: 'skills', after: 'languages' },
         { key: 'projects', after: 'skills' },
         { key: 'courses', after: 'education' },
     ];
@@ -209,6 +360,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!cvData.skills) cvData.skills = [];
     if (!cvData.projects) cvData.projects = [];
     if (!cvData.courses) cvData.courses = [];
+    if (cvData.languages) cvData.languages.forEach(l => { l.level = migrateProficiencyLevel(l.level); });
 
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === currentTheme));
     document.getElementById('toggle-company-logos').checked = cvData.show_company_logos !== false;
@@ -218,10 +370,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderCvLanguageSelector();
     renderSectionOrder();
     renderColorSchemes();
+    renderHeadingColors();
+    renderFontPresets();
     updateTabVisibility();
     populateForm();
     applyUiLanguage();
+    const savedTab = localStorage.getItem('cv_active_tab');
+    if (savedTab) { const tb = document.querySelector(`.tab[data-tab="${savedTab}"]`); if (tb) switchTab(tb); }
     updatePreview();
+
+    let _resizeTimer;
+    window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(() => updatePreview(), 250); });
 });
 
 function renderAll() {
@@ -238,6 +397,7 @@ function renderAll() {
     if (!cvData.skills) cvData.skills = [];
     if (!cvData.projects) cvData.projects = [];
     if (!cvData.courses) cvData.courses = [];
+    if (cvData.languages) cvData.languages.forEach(l => { l.level = migrateProficiencyLevel(l.level); });
 
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === currentTheme));
     document.getElementById('toggle-company-logos').checked = cvData.show_company_logos !== false;
@@ -247,6 +407,8 @@ function renderAll() {
     renderCvLanguageSelector();
     renderSectionOrder();
     renderColorSchemes();
+    renderHeadingColors();
+    renderFontPresets();
     updateTabVisibility();
     populateForm();
     applyUiLanguage();
@@ -298,6 +460,7 @@ function switchTab(btn) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    try { localStorage.setItem('cv_active_tab', btn.dataset.tab); } catch(e) {}
 }
 
 function populateForm() {
@@ -324,7 +487,7 @@ function collectData() {
     document.querySelectorAll('#contacts-list .contact-row').forEach(row => {
         const icon = row.querySelector('.contact-type').value;
         const linkCb = row.querySelector('.contact-link-toggle');
-        contacts.push({ type: icon, icon: icon, label: row.querySelector('.contact-label').value, value: row.querySelector('.contact-value').value, link: linkCb ? linkCb.checked : false });
+        contacts.push({ type: icon, icon: icon, label: '', value: row.querySelector('.contact-value').value, link: linkCb ? linkCb.checked : false });
     });
     const photo = cvData.personal && cvData.personal.photo || '';
     cvData.personal = { name: document.getElementById('personal-name').value, title: document.getElementById('personal-title').value, photo, contacts };
@@ -467,16 +630,17 @@ function renderContactsList() {
     (cvData.personal.contacts || []).forEach((ct, i) => {
         const opts = getContactTypes().map(t => `<option value="${t.value}" ${t.value===ct.icon?'selected':''}>${t.label}</option>`).join('');
         const d = document.createElement('div'); d.className = 'contact-row';
-        d.innerHTML = `<select class="contact-type" onchange="updatePreview()">${opts}</select>
-            <input type="text" class="contact-label" value="${esc(ct.label)}" placeholder="${_ui('labelPlaceholder')}" onchange="updatePreview()">
+        const linkable = ct.icon !== 'location';
+        d.innerHTML = `<select class="contact-type" onchange="onContactTypeChange(${i},this)">${opts}</select>
             <input type="text" class="contact-value" value="${esc(ct.value)}" placeholder="${_ui('valuePlaceholder')}" onchange="updatePreview()">
-            <label class="contact-link-wrap" title="Link"><input type="checkbox" class="contact-link-toggle" ${ct.link?'checked':''} onchange="updatePreview()"><span class="link-icon">&#128279;</span></label>
+            ${linkable ? `<label class="contact-link-wrap" title="Link"><input type="checkbox" class="contact-link-toggle" ${ct.link?'checked':''} onchange="updatePreview()"><span class="link-icon">&#128279;</span></label>` : '<span style="width:28px"></span>'}
             <button class="btn-remove-item" onclick="removeContact(${i})">&times;</button>`;
         c.appendChild(d);
     });
 }
 function addContact() { collectData(); cvData.personal.contacts.push({type:'website',icon:'website',label:'',value:'',link:false}); renderContactsList(); updatePreview(); }
-function removeContact(i) { if (!confirm(_ui('remove')+'?')) return; collectData(); cvData.personal.contacts.splice(i,1); renderContactsList(); updatePreview(); }
+function removeContact(i) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.personal.contacts.splice(i,1); renderContactsList(); updatePreview(); }); }
+function onContactTypeChange(i, sel) { collectData(); cvData.personal.contacts[i].icon = sel.value; if (sel.value === 'location') cvData.personal.contacts[i].link = false; renderContactsList(); updatePreview(); }
 
 function renderEmployerGroups() {
     const container = document.getElementById('employer-groups-list');
@@ -615,7 +779,7 @@ function addEmployerGroup() {
     cvData.employer_groups.push({ id: 'g'+Date.now()+'_'+Math.random().toString(36).slice(2,6), group_name: '', url: '', logo: '', hidden: false, positions: [{ display_company: '', role: '', date_from: '', date_to: '', bullets: [''] }] });
     renderEmployerGroups(); updatePreview();
 }
-function removeGroup(gi) { if (!confirm(_ui('remove')+'?')) return; collectData(); cvData.employer_groups.splice(gi,1); renderEmployerGroups(); updatePreview(); }
+function removeGroup(gi) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.employer_groups.splice(gi,1); renderEmployerGroups(); updatePreview(); }); }
 function toggleGroupHidden(gi) { collectData(); cvData.employer_groups[gi].hidden = !cvData.employer_groups[gi].hidden; renderEmployerGroups(); updatePreview(); }
 function moveGroup(gi, dir) {
     collectData(); const arr = cvData.employer_groups; const ni = gi+dir;
@@ -623,7 +787,7 @@ function moveGroup(gi, dir) {
     renderEmployerGroups(); updatePreview();
 }
 function addPosition(gi) { collectData(); cvData.employer_groups[gi].positions.push({display_company:cvData.employer_groups[gi].group_name,role:'',date_from:'',date_to:'',bullets:['']}); renderEmployerGroups(); updatePreview(); }
-function removePosition(gi,pi) { if (!confirm(_ui('remove')+'?')) return; collectData(); cvData.employer_groups[gi].positions.splice(pi,1); renderEmployerGroups(); updatePreview(); }
+function removePosition(gi,pi) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.employer_groups[gi].positions.splice(pi,1); renderEmployerGroups(); updatePreview(); }); }
 function movePosition(gi,pi,dir) {
     collectData(); const arr = cvData.employer_groups[gi].positions; const ni = pi+dir;
     if (ni<0||ni>=arr.length) return; [arr[pi],arr[ni]]=[arr[ni],arr[pi]];
@@ -635,18 +799,19 @@ function removePosBullet(gi,pi,bi) { collectData(); cvData.employer_groups[gi].p
 function sortGroupsByDate() {
     collectData();
     const parseDate = s => {
-        if (!s||s.toLowerCase()==='present') return new Date(9999,0);
+        if (s && s.toLowerCase()==='present') return new Date(9999,0);
+        if (!s) return new Date(0);
         const n = dateToNum(s);
         if (n > 0 && n < 999912) return new Date(Math.floor(n/100), (n%100)-1);
         if (/^\d{4}-\d{2}$/.test(s)) { const [y,mo]=s.split('-'); return new Date(parseInt(y),parseInt(mo)-1); }
         const p = s.split(' ');
         return new Date(parseInt(p[p.length-1])||0, 0);
     };
-    cvData.employer_groups.sort((a,b) => {
-        const aD = a.positions.length ? parseDate(a.positions[0].date_to) : new Date(0);
-        const bD = b.positions.length ? parseDate(b.positions[0].date_to) : new Date(0);
-        return bD - aD;
-    });
+    const latestDate = g => g.positions.reduce((max, p) => {
+        const d = parseDate(p.date_to);
+        return d > max ? d : max;
+    }, new Date(0));
+    cvData.employer_groups.sort((a,b) => latestDate(b) - latestDate(a));
     renderEmployerGroups(); updatePreview();
     showToast(_ui('toastSorted'));
 }
@@ -717,7 +882,7 @@ function showEduLogoMenu(i, el) {
     });
 }
 function addEducation() { collectData(); cvData.education.push({institution:'',degree:'',date_from:'',date_to:'',logo:''}); renderEducationList(); updatePreview(); }
-function removeEducation(i) { if (!confirm(_ui('remove')+'?')) return; collectData(); cvData.education.splice(i,1); renderEducationList(); updatePreview(); }
+function removeEducation(i) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.education.splice(i,1); renderEducationList(); updatePreview(); }); }
 
 function renderLanguagesList() {
     const c = document.getElementById('languages-list'); c.innerHTML = '';
@@ -727,8 +892,9 @@ function renderLanguagesList() {
         const langOpts = LANGUAGES_DB.map(l =>
             `<option value="${l.name}" ${l.name===lang.language?'selected':''}>${l.name}</option>`
         ).join('');
-        const levelOpts = PROFICIENCY_LEVELS.map(lv =>
-            `<option value="${lv}" ${lv===lang.level?'selected':''}>${lv}</option>`
+        const levels = getProficiencyLevels(uiLang);
+        const levelOpts = levels.map(lv =>
+            `<option value="${lv.key}" ${lv.key===lang.level?'selected':''}>${lv.label}</option>`
         ).join('');
         const flagPreview = (lang.flag && FLAGS[lang.flag]) ? FLAGS[lang.flag] : '';
 
@@ -738,19 +904,15 @@ function renderLanguagesList() {
 
         let flagUploadHtml = '';
         if (isCustomLang || !hasBuiltinFlag) {
-            const currentCustomFlag = customFlagUrl
-                ? `<img src="${esc(customFlagUrl)}" style="width:22px;height:14px;object-fit:cover;border-radius:2px;border:1px solid #eee">`
-                : '<span style="font-size:10px;color:#aaa">brak</span>';
+            const flagThumb = customFlagUrl
+                ? `<img src="${esc(customFlagUrl)}" style="width:24px;height:16px;object-fit:cover;border-radius:2px;border:1px solid #ddd">`
+                : '';
             flagUploadHtml = `<div class="form-group" style="flex:0 0 auto">
-                <label>Flaga</label>
-                <div class="custom-flag-upload">
-                    <span class="cfu-preview">${currentCustomFlag}</span>
-                    <label class="cfu-btn" title="${_ui('uploadFile')} (max 128x96px)">
-                        <input type="file" accept="image/*" onchange="uploadLangFlag(${i}, this)" hidden>
-                        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0L3 5h3v6h4V5h3L8 0zM1 14h14v2H1v-2z"/></svg>
-                    </label>
-                </div>
-                <span style="font-size:9px;color:#aaa">max 128x96px</span>
+                <label>${_ui('flagLabel')}</label>
+                <label class="cfu-upload-btn" title="${_ui('uploadFile')} (max 128x96px)">
+                    <input type="file" accept="image/*" onchange="uploadLangFlag(${i}, this)" hidden>
+                    ${flagThumb || `<svg width="14" height="14" viewBox="0 0 16 16" fill="#aaa"><path d="M8 0L3 5h3v6h4V5h3L8 0zM1 14h14v2H1v-2z"/></svg>`}
+                </label>
             </div>`;
         }
 
@@ -764,10 +926,10 @@ function renderLanguagesList() {
             <div class="form-row">
                 <div class="form-group"><label>${_ui('tabLanguages')}</label>
                     <select class="lang-name" onchange="onLangChange(${i}, this)">${langOpts}<option value="_custom" ${isCustomLang?'selected':''}>Other...</option></select>
-                    ${isCustomLang?`<input type="text" class="lang-name-custom" value="${esc(lang.language)}" placeholder="${_ui('typeName')}" style="margin-top:4px" onchange="updatePreview()">`:''}</div>
+                    ${isCustomLang?`<input type="text" class="lang-name-custom" value="${esc(lang.language)}" placeholder="${_ui('typeName')}" style="margin-top:4px" onchange="updateCardTitle(this);updatePreview()">`:''}</div>
                 <div class="form-group"><label>Level</label>
-                    <select class="lang-level" onchange="updatePreview()">${levelOpts}<option value="_custom" ${PROFICIENCY_LEVELS.every(lv=>lv!==lang.level)?'selected':''}>Other...</option></select>
-                    ${PROFICIENCY_LEVELS.every(lv=>lv!==lang.level)?`<input type="text" class="lang-level-custom" value="${esc(lang.level)}" placeholder="${_ui('typeLevel')}" style="margin-top:4px" onchange="updatePreview()">`:''}</div>
+                    <select class="lang-level" onchange="updatePreview()">${levelOpts}<option value="_custom" ${lang.level && levels.every(lv=>lv.key!==lang.level)?'selected':''}>Other...</option></select>
+                    ${lang.level && levels.every(lv=>lv.key!==lang.level)?`<input type="text" class="lang-level-custom" value="${esc(lang.level)}" placeholder="${_ui('typeLevel')}" style="margin-top:4px" onchange="updatePreview()">`:''}</div>
                 ${flagUploadHtml}
             </div>`;
         c.appendChild(card);
@@ -810,7 +972,7 @@ async function uploadLangFlag(i, input) {
     img.src = URL.createObjectURL(file);
 }
 function addLanguage() { collectData(); cvData.languages.push({language:'',level:'',flag:''}); renderLanguagesList(); updatePreview(); }
-function removeLanguage(i) { if (!confirm(_ui('remove')+'?')) return; collectData(); cvData.languages.splice(i,1); renderLanguagesList(); updatePreview(); }
+function removeLanguage(i) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.languages.splice(i,1); renderLanguagesList(); updatePreview(); }); }
 
 function renderSkillsList() {
     const c = document.getElementById('skills-list'); c.innerHTML = '';
@@ -825,21 +987,22 @@ function renderSkillsList() {
             </div>`;
         });
         card.innerHTML = `
-            <div class="card-header">
-                <input type="text" class="skill-category-name" value="${esc(cat.category)}" placeholder="${_ui('categoryName')}" onchange="updatePreview()">
-                <div class="card-actions">
-                    <button class="btn-move" onclick="moveSkillCategory(${ci},-1)">&#9650;</button>
-                    <button class="btn-move" onclick="moveSkillCategory(${ci},1)">&#9660;</button>
+            <div class="entry-card-header">
+                <span class="entry-card-title">${cat.category||_ui('categoryName')}</span>
+                <div class="entry-card-actions">
+                    <button class="move-btn" onclick="moveSkillCategory(${ci},-1)">&#9650;</button>
+                    <button class="move-btn" onclick="moveSkillCategory(${ci},1)">&#9660;</button>
                     <button class="btn-remove" onclick="removeSkillCategory(${ci})">${_ui('remove')}</button>
                 </div>
             </div>
+            <div class="form-group" style="margin-bottom:8px"><label>${_ui('categoryName')}</label><input type="text" class="skill-category-name" value="${esc(cat.category)}" placeholder="${_ui('categoryName')}" onchange="updateCardTitle(this);updatePreview()"></div>
             <div class="skill-tags-list">${tagsHtml}</div>
             <button class="btn-add-cert-item" onclick="addSkillItem(${ci})">+ ${_ui('skill')}</button>`;
         c.appendChild(card);
     });
 }
 function addSkillCategory() { collectData(); if(!cvData.skills) cvData.skills=[]; cvData.skills.push({category:'',items:['']});renderSkillsList();updatePreview(); }
-function removeSkillCategory(ci) { if (!confirm(_ui('remove')+'?')) return; collectData(); cvData.skills.splice(ci,1); renderSkillsList(); updatePreview(); }
+function removeSkillCategory(ci) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.skills.splice(ci,1); renderSkillsList(); updatePreview(); }); }
 function moveSkillCategory(ci,dir) { collectData(); const a=cvData.skills,ni=ci+dir; if(ni<0||ni>=a.length)return; [a[ci],a[ni]]=[a[ni],a[ci]]; renderSkillsList(); updatePreview(); }
 function addSkillItem(ci) { collectData(); cvData.skills[ci].items.push(''); renderSkillsList(); updatePreview(); }
 function removeSkillItem(ci,ii) { collectData(); cvData.skills[ci].items.splice(ii,1); renderSkillsList(); updatePreview(); }
@@ -870,7 +1033,7 @@ function renderProjectsList() {
     });
 }
 function addProject() { collectData(); if(!cvData.projects) cvData.projects=[]; cvData.projects.push({name:'',role:'',url:'',date_from:'',date_to:'',description:''}); renderProjectsList(); updatePreview(); }
-function removeProject(i) { if (!confirm(_ui('remove')+'?')) return; collectData(); cvData.projects.splice(i,1); renderProjectsList(); updatePreview(); }
+function removeProject(i) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.projects.splice(i,1); renderProjectsList(); updatePreview(); }); }
 function moveProject(i,dir) { collectData(); const a=cvData.projects,ni=i+dir; if(ni<0||ni>=a.length)return; [a[i],a[ni]]=[a[ni],a[i]]; renderProjectsList(); updatePreview(); }
 
 function renderCoursesList() {
@@ -897,7 +1060,7 @@ function renderCoursesList() {
     });
 }
 function addCourse() { collectData(); if(!cvData.courses) cvData.courses=[]; cvData.courses.push({name:'',provider:'',url:'',date:''}); renderCoursesList(); updatePreview(); }
-function removeCourse(i) { if (!confirm(_ui('remove')+'?')) return; collectData(); cvData.courses.splice(i,1); renderCoursesList(); updatePreview(); }
+function removeCourse(i) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.courses.splice(i,1); renderCoursesList(); updatePreview(); }); }
 function moveCourse(i,dir) { collectData(); const a=cvData.courses,ni=i+dir; if(ni<0||ni>=a.length)return; [a[i],a[ni]]=[a[ni],a[i]]; renderCoursesList(); updatePreview(); }
 
 function renderCertificationsList() {
@@ -935,7 +1098,7 @@ function renderCertificationsList() {
     });
 }
 function addCertGroup() { collectData(); cvData.certifications.push({issuer:'',issuer_url:'',logo:'',items:[{name:'',url:''}]}); renderCertificationsList(); updatePreview(); }
-function removeCertGroup(gi) { if (!confirm(_ui('remove')+'?')) return; collectData(); cvData.certifications.splice(gi,1); renderCertificationsList(); updatePreview(); }
+function removeCertGroup(gi) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.certifications.splice(gi,1); renderCertificationsList(); updatePreview(); }); }
 function moveCertGroup(gi,dir) { collectData(); const a=cvData.certifications,ni=gi+dir; if(ni<0||ni>=a.length)return; [a[gi],a[ni]]=[a[ni],a[gi]]; renderCertificationsList(); updatePreview(); }
 function addCertItem(gi) { collectData(); cvData.certifications[gi].items.push({name:'',url:''}); renderCertificationsList(); updatePreview(); }
 function removeCertItem(gi,ii) { collectData(); cvData.certifications[gi].items.splice(ii,1); renderCertificationsList(); updatePreview(); }
@@ -1221,8 +1384,36 @@ function renderColorSchemes() {
     Object.entries(COLOR_SCHEMES).forEach(([key, scheme]) => {
         const div = document.createElement('button');
         div.className = 'color-scheme-btn' + (cvData.color_scheme===key?' active':'');
-        div.onclick = () => { cvData.color_scheme = key; renderColorSchemes(); updatePreview(); };
+        div.onclick = () => { cvData.color_scheme = key; renderColorSchemes(); renderHeadingColors(); updatePreview(); };
         div.innerHTML = `<div class="cs-swatch" style="background:${scheme.primary}"></div><span>${scheme.name}</span>`;
+        c.appendChild(div);
+    });
+}
+
+function renderHeadingColors() {
+    const c = document.getElementById('heading-color-list'); if (!c) return;
+    c.innerHTML = '';
+    const current = cvData.heading_color || 'auto';
+    Object.entries(HEADING_COLORS).forEach(([key, hc]) => {
+        const div = document.createElement('button');
+        div.className = 'color-scheme-btn' + (current===key?' active':'');
+        div.onclick = () => { cvData.heading_color = key; renderHeadingColors(); updatePreview(); };
+        const swatchColor = hc.color || getScheme().primary;
+        const label = key === 'auto' ? `${hc.name} <span style="font-size:10px;color:#999">(= accent)</span>` : hc.name;
+        div.innerHTML = `<div class="cs-swatch" style="background:${swatchColor}"></div><span>${label}</span>`;
+        c.appendChild(div);
+    });
+}
+
+function renderFontPresets() {
+    const c = document.getElementById('font-preset-list'); if (!c) return;
+    c.innerHTML = '';
+    Object.entries(FONT_PRESETS).forEach(([key, preset]) => {
+        const div = document.createElement('button');
+        div.className = 'font-preset-btn' + (cvData.font_preset===key?' active':'');
+        div.style.fontFamily = preset.family;
+        div.onclick = () => { cvData.font_preset = key; renderFontPresets(); updatePreview(); };
+        div.textContent = preset.name;
         c.appendChild(div);
     });
 }
@@ -1295,7 +1486,28 @@ function loadDataFromFile() {
                 if (parsed.personal && parsed.personal.photo && !parsed.personal.photo.startsWith('data:image/')) {
                     parsed.personal.photo = '';
                 }
-                cvData = parsed;
+                cvData = {
+                    personal: { name: '', title: '', photo: '', contacts: [] },
+                    summary: '',
+                    employer_groups: [],
+                    education: [],
+                    skills: [],
+                    certifications: [],
+                    projects: [],
+                    courses: [],
+                    languages: [],
+                    section_order: ['summary','experience','projects','certifications','education','courses','languages','skills'],
+                    disabled_sections: [],
+                    color_scheme: 'navy',
+                    font_preset: 'calibri',
+                    heading_color: 'black',
+                    show_company_logos: true,
+                    show_cert_logos: true,
+                    show_lang_flags: true,
+                    clause_enabled: false,
+                    clause_text: '',
+                    ...parsed,
+                };
                 localStorage.setItem('cv_data', JSON.stringify(cvData));
                 currentTheme = cvData.theme || 'sidebar';
                 renderAll();
@@ -1310,30 +1522,33 @@ function loadDataFromFile() {
 }
 
 function clearAllData() {
-    if (!confirm(_ui('confirmClear'))) return;
-    cvData = {
-        personal: { name: '', title: '', photo: '', contacts: [] },
-        summary: '',
-        employer_groups: [],
-        education: [],
-        skills: [],
-        certifications: [],
-        projects: [],
-        courses: [],
-        languages: [],
-        section_order: ['summary','experience','skills','projects','certifications','education','courses','languages'],
-        disabled_sections: [],
-        color_scheme: 'navy',
-        show_company_logos: true,
-        show_cert_logos: true,
-        show_lang_flags: true,
-        cv_language: cvData.cv_language || 'en',
-        clause_enabled: false,
-        clause_text: '',
-    };
-    localStorage.setItem('cv_data', JSON.stringify(cvData));
-    renderAll();
-    showToast(_ui('toastCleared'));
+    appConfirm(_ui('confirmClear'), () => {
+        cvData = {
+            personal: { name: '', title: '', photo: '', contacts: [] },
+            summary: '',
+            employer_groups: [],
+            education: [],
+            skills: [],
+            certifications: [],
+            projects: [],
+            courses: [],
+            languages: [],
+            section_order: ['summary','experience','projects','certifications','education','courses','languages','skills'],
+            disabled_sections: [],
+            color_scheme: 'navy',
+            font_preset: 'calibri',
+            heading_color: 'black',
+            show_company_logos: true,
+            show_cert_logos: true,
+            show_lang_flags: true,
+            cv_language: cvData.cv_language || 'en',
+            clause_enabled: false,
+            clause_text: '',
+        };
+        localStorage.setItem('cv_data', JSON.stringify(cvData));
+        renderAll();
+        showToast(_ui('toastCleared'));
+    });
 }
 
 async function fetchAllLogos() {

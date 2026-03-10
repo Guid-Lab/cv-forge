@@ -198,17 +198,17 @@
   "languages": [
     {
       "language": "English",
-      "level": "Native",
+      "level": "native",
       "flag": "gb"
     },
     {
       "language": "German",
-      "level": "Professional working proficiency",
+      "level": "professional_working",
       "flag": "de"
     },
     {
       "language": "Polish",
-      "level": "Limited working proficiency",
+      "level": "limited_working",
       "flag": "pl"
     }
   ],
@@ -220,35 +220,30 @@
       {
         "type": "location",
         "icon": "location",
-        "label": "",
         "value": "Berlin, Germany",
         "link": false
       },
       {
         "type": "email",
         "icon": "email",
-        "label": "",
         "value": "alex.morgan@example.com",
         "link": true
       },
       {
         "type": "phone",
         "icon": "phone",
-        "label": "",
         "value": "+49 170 555 1234",
         "link": true
       },
       {
         "type": "linkedin",
         "icon": "linkedin",
-        "label": "",
         "value": "linkedin.com/in/alexmorgan",
         "link": true
       },
       {
         "type": "github",
         "icon": "github",
-        "label": "",
         "value": "github.com/alexmorgan",
         "link": true
       }

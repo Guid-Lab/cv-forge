@@ -27,7 +27,7 @@ const UI = {
         fullName: 'Full name', jobTitle: 'Job title', contacts: 'Contact details', addContact: '+ Add contact field',
         summaryLabel: 'Professional summary',
         sortByDate: 'Sort by date', addEmployer: '+ Add employer', addPosition: '+ Add position / promotion',
-        remove: 'Remove', companyName: 'Company name (displayed)', position: 'Position',
+        remove: 'Remove', cancel: 'Cancel', companyName: 'Company name (displayed)', position: 'Position',
         dateFrom: 'From', dateTo: 'To', description: 'Description', bulletPoints: 'Bullet points', paragraph: 'Paragraph',
         addBullet: '+ Add bullet', employerUrl: 'Employer URL (optional)', present: 'Present',
         addEducation: '+ Add education', institutionUrl: 'Institution URL',
@@ -42,7 +42,7 @@ const UI = {
         verificationUrl: 'Verification URL (optional)',
         previewVisual: 'Visual', previewAts: 'ATS',
         togglePreview: 'Hide/show preview',
-        fetchFromUrl: 'Fetch from URL', uploadFile: 'Upload file', removeLogo: 'Remove logo',
+        fetchFromUrl: 'Fetch from URL', uploadFile: 'Upload file', removeLogo: 'Remove logo', flagLabel: 'Flag', noFlag: 'none',
         toastFetchingLogo: 'Fetching logo...', toastLogoFetched: 'Logo fetched',
         toastLogoFetchFail: 'Failed to fetch logo', toastInvalidFile: 'Invalid file format',
         toastPhotoTooBig: 'Photo too large (max 5 MB)', toastPhotoAdded: 'Photo added',
@@ -89,7 +89,7 @@ const UI = {
         fullName: 'Imię i nazwisko', jobTitle: 'Tytuł zawodowy', contacts: 'Dane kontaktowe', addContact: '+ Dodaj pole kontaktowe',
         summaryLabel: 'Podsumowanie zawodowe',
         sortByDate: 'Sortuj wg dat', addEmployer: '+ Dodaj pracodawcę', addPosition: '+ Dodaj stanowisko / awans',
-        remove: 'Usuń', companyName: 'Nazwa firmy (wyświetlana)', position: 'Stanowisko',
+        remove: 'Usuń', cancel: 'Anuluj', companyName: 'Nazwa firmy (wyświetlana)', position: 'Stanowisko',
         dateFrom: 'Od', dateTo: 'Do', description: 'Opis', bulletPoints: 'Bullet points', paragraph: 'Paragraf',
         addBullet: '+ Dodaj punkt', employerUrl: 'URL pracodawcy (opcjonalnie)', present: 'Obecnie',
         addEducation: '+ Dodaj edukację', institutionUrl: 'URL uczelni',
@@ -104,7 +104,7 @@ const UI = {
         verificationUrl: 'URL weryfikacji (opcjonalnie)',
         previewVisual: 'Wizualny', previewAts: 'ATS',
         togglePreview: 'Ukryj/pokaż podgląd',
-        fetchFromUrl: 'Pobierz z URL', uploadFile: 'Wgraj plik', removeLogo: 'Usuń logo',
+        fetchFromUrl: 'Pobierz z URL', uploadFile: 'Wgraj plik', removeLogo: 'Usuń logo', flagLabel: 'Flaga', noFlag: 'brak',
         toastFetchingLogo: 'Pobieram logo...', toastLogoFetched: 'Logo pobrane',
         toastLogoFetchFail: 'Nie udało się pobrać logo', toastInvalidFile: 'Nieprawidłowy format pliku',
         toastPhotoTooBig: 'Zdjęcie zbyt duże (maks. 5 MB)', toastPhotoAdded: 'Zdjęcie dodane',
@@ -151,7 +151,7 @@ const UI = {
         fullName: 'Vollständiger Name', jobTitle: 'Berufsbezeichnung', contacts: 'Kontaktdaten', addContact: '+ Kontaktfeld hinzufügen',
         summaryLabel: 'Berufliche Zusammenfassung',
         sortByDate: 'Nach Datum sortieren', addEmployer: '+ Arbeitgeber hinzufügen', addPosition: '+ Position / Beförderung hinzufügen',
-        remove: 'Entfernen', companyName: 'Firmenname (angezeigt)', position: 'Position',
+        remove: 'Entfernen', cancel: 'Abbrechen', companyName: 'Firmenname (angezeigt)', position: 'Position',
         dateFrom: 'Von', dateTo: 'Bis', description: 'Beschreibung', bulletPoints: 'Aufzählung', paragraph: 'Absatz',
         addBullet: '+ Punkt hinzufügen', employerUrl: 'Arbeitgeber-URL (optional)', present: 'Aktuell',
         addEducation: '+ Ausbildung hinzufügen', institutionUrl: 'URL der Institution',
@@ -166,7 +166,7 @@ const UI = {
         verificationUrl: 'Verifizierungs-URL (optional)',
         previewVisual: 'Visuell', previewAts: 'ATS',
         togglePreview: 'Vorschau ein-/ausblenden',
-        fetchFromUrl: 'Von URL laden', uploadFile: 'Datei hochladen', removeLogo: 'Logo entfernen',
+        fetchFromUrl: 'Von URL laden', uploadFile: 'Datei hochladen', removeLogo: 'Logo entfernen', flagLabel: 'Flagge', noFlag: 'keine',
         toastFetchingLogo: 'Logo wird geladen...', toastLogoFetched: 'Logo geladen',
         toastLogoFetchFail: 'Logo konnte nicht geladen werden', toastInvalidFile: 'Ungültiges Dateiformat',
         toastPhotoTooBig: 'Foto zu groß (max. 5 MB)', toastPhotoAdded: 'Foto hinzugefügt',
@@ -213,7 +213,7 @@ const UI = {
         fullName: 'Nom complet', jobTitle: 'Titre professionnel', contacts: 'Coordonnées', addContact: '+ Ajouter un champ de contact',
         summaryLabel: 'Résumé professionnel',
         sortByDate: 'Trier par date', addEmployer: '+ Ajouter un employeur', addPosition: '+ Ajouter un poste / promotion',
-        remove: 'Supprimer', companyName: 'Nom de l\'entreprise (affiché)', position: 'Poste',
+        remove: 'Supprimer', cancel: 'Annuler', companyName: 'Nom de l\'entreprise (affiché)', position: 'Poste',
         dateFrom: 'De', dateTo: 'À', description: 'Description', bulletPoints: 'Puces', paragraph: 'Paragraphe',
         addBullet: '+ Ajouter un point', employerUrl: 'URL de l\'employeur (optionnel)', present: 'Actuel',
         addEducation: '+ Ajouter une formation', institutionUrl: 'URL de l\'institution',
@@ -228,7 +228,7 @@ const UI = {
         verificationUrl: 'URL de vérification (optionnel)',
         previewVisual: 'Visuel', previewAts: 'ATS',
         togglePreview: 'Afficher/masquer l\'aperçu',
-        fetchFromUrl: 'Télécharger depuis URL', uploadFile: 'Télécharger un fichier', removeLogo: 'Supprimer le logo',
+        fetchFromUrl: 'Télécharger depuis URL', uploadFile: 'Télécharger un fichier', removeLogo: 'Supprimer le logo', flagLabel: 'Drapeau', noFlag: 'aucun',
         toastFetchingLogo: 'Téléchargement du logo...', toastLogoFetched: 'Logo téléchargé',
         toastLogoFetchFail: 'Impossible de télécharger le logo', toastInvalidFile: 'Format de fichier invalide',
         toastPhotoTooBig: 'Photo trop grande (max 5 Mo)', toastPhotoAdded: 'Photo ajoutée',
@@ -275,7 +275,7 @@ const UI = {
         fullName: 'Nombre completo', jobTitle: 'Título profesional', contacts: 'Datos de contacto', addContact: '+ Añadir campo de contacto',
         summaryLabel: 'Resumen profesional',
         sortByDate: 'Ordenar por fecha', addEmployer: '+ Añadir empleador', addPosition: '+ Añadir puesto / ascenso',
-        remove: 'Eliminar', companyName: 'Nombre de empresa (mostrado)', position: 'Puesto',
+        remove: 'Eliminar', cancel: 'Cancelar', companyName: 'Nombre de empresa (mostrado)', position: 'Puesto',
         dateFrom: 'Desde', dateTo: 'Hasta', description: 'Descripción', bulletPoints: 'Viñetas', paragraph: 'Párrafo',
         addBullet: '+ Añadir punto', employerUrl: 'URL del empleador (opcional)', present: 'Actual',
         addEducation: '+ Añadir educación', institutionUrl: 'URL de la institución',
@@ -290,7 +290,7 @@ const UI = {
         verificationUrl: 'URL de verificación (opcional)',
         previewVisual: 'Visual', previewAts: 'ATS',
         togglePreview: 'Mostrar/ocultar vista previa',
-        fetchFromUrl: 'Descargar desde URL', uploadFile: 'Subir archivo', removeLogo: 'Eliminar logo',
+        fetchFromUrl: 'Descargar desde URL', uploadFile: 'Subir archivo', removeLogo: 'Eliminar logo', flagLabel: 'Bandera', noFlag: 'ninguna',
         toastFetchingLogo: 'Descargando logo...', toastLogoFetched: 'Logo descargado',
         toastLogoFetchFail: 'No se pudo descargar el logo', toastInvalidFile: 'Formato de archivo no válido',
         toastPhotoTooBig: 'Foto demasiado grande (máx. 5 MB)', toastPhotoAdded: 'Foto añadida',
@@ -334,16 +334,28 @@ function setUiLanguage(lang) {
 function renderUiLanguageSelector() {
     const c = document.getElementById('ui-lang-selector');
     if (!c) return;
-    c.innerHTML = '';
+    const currentLang = CV_LANGUAGES[uiLang];
+    const currentFlag = FLAGS[currentLang.flag] || '';
+    let optionsHtml = '';
     SUPPORTED_LANGS.forEach(code => {
         const lang = CV_LANGUAGES[code];
-        const btn = document.createElement('button');
-        btn.className = 'ui-lang-btn' + (uiLang === code ? ' active' : '');
-        btn.innerHTML = FLAGS[lang.flag] || '';
-        btn.title = lang.label;
-        btn.onclick = () => setUiLanguage(code);
-        c.appendChild(btn);
+        optionsHtml += `<button class="ui-lang-option${code===uiLang?' active':''}" onclick="setUiLanguage('${code}')" title="${lang.label}">${FLAGS[lang.flag]||''} <span>${lang.label}</span></button>`;
     });
+    c.innerHTML = `<button class="ui-lang-current" onclick="toggleUiLangDropdown(event)" title="${currentLang.label}">${currentFlag}</button><div class="ui-lang-dropdown" id="ui-lang-dropdown">${optionsHtml}</div>`;
+}
+
+function toggleUiLangDropdown(e) {
+    e.stopPropagation();
+    const dd = document.getElementById('ui-lang-dropdown');
+    dd.classList.toggle('show');
+    if (dd.classList.contains('show')) {
+        setTimeout(() => document.addEventListener('click', closeUiLangDropdown, { once: true }), 0);
+    }
+}
+
+function closeUiLangDropdown() {
+    const dd = document.getElementById('ui-lang-dropdown');
+    if (dd) dd.classList.remove('show');
 }
 
 function applyUiLanguage() {

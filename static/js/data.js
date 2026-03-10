@@ -81,6 +81,38 @@ function showToast(msg, err=false) {
     clearTimeout(t._t); t._t=setTimeout(()=>{t.className='toast';},3000);
 }
 
+const FONT_PRESETS = {
+    calibri:  { name: 'Calibri',  family: "'Calibri', 'Segoe UI', sans-serif" },
+    helvetica:{ name: 'Helvetica',family: "'Helvetica Neue', Helvetica, Arial, sans-serif" },
+    georgia:  { name: 'Georgia',  family: "Georgia, 'Times New Roman', serif" },
+    garamond: { name: 'Garamond', family: "'EB Garamond', Garamond, 'Times New Roman', serif" },
+    inter:    { name: 'Inter',    family: "'Inter', system-ui, -apple-system, sans-serif" },
+    roboto:   { name: 'Roboto',   family: "'Roboto', 'Segoe UI', sans-serif" },
+};
+
+function getFont() {
+    return FONT_PRESETS[cvData.font_preset] || FONT_PRESETS.calibri;
+}
+
+const HEADING_COLORS = {
+    black:    { name: 'Black',    color: '#111111' },
+    auto:     { name: 'Auto',     color: null },
+    navy:     { name: 'Navy',     color: '#1a233b' },
+    graphite: { name: 'Graphite', color: '#374151' },
+    steel:    { name: 'Steel',    color: '#475569' },
+    ocean:    { name: 'Ocean',    color: '#0c4a6e' },
+    forest:   { name: 'Forest',   color: '#14532d' },
+    wine:     { name: 'Wine',     color: '#4a1d2e' },
+    brown:    { name: 'Brown',    color: '#5c3d2e' },
+    indigo:   { name: 'Indigo',   color: '#312e81' },
+};
+
+function getHeadingColor() {
+    const h = HEADING_COLORS[cvData.heading_color];
+    if (h && h.color) return h.color;
+    return getScheme().primary;
+}
+
 const COLOR_SCHEMES = {
     navy:    { name: 'Navy',    primary: '#1a233b', accent: '#2d3a5c', text: '#333333', light: '#556580' },
     ocean:   { name: 'Ocean',   primary: '#0c4a6e', accent: '#0369a1', text: '#1e293b', light: '#64748b' },
@@ -182,16 +214,73 @@ const LANGUAGES_DB = [
     { name: 'Hebrew', flag: 'il' },
 ];
 
-const PROFICIENCY_LEVELS = [
-    'Native',
-    'Bilingual',
-    'Full professional proficiency',
-    'Professional working proficiency',
-    'Working proficiency',
-    'Limited working proficiency',
-    'Elementary proficiency',
-    'Beginner',
-];
+const PROFICIENCY_LEVELS_I18N = {
+    en: {
+        native: 'Native or bilingual proficiency',
+        full_professional: 'Full professional proficiency',
+        professional_working: 'Professional working proficiency',
+        limited_working: 'Limited working proficiency',
+        elementary: 'Elementary proficiency',
+    },
+    pl: {
+        native: 'Ojczysty lub dwujęzyczny',
+        full_professional: 'Pełna biegłość zawodowa',
+        professional_working: 'Profesjonalna znajomość robocza',
+        limited_working: 'Ograniczona znajomość robocza',
+        elementary: 'Znajomość podstawowa',
+    },
+    de: {
+        native: 'Muttersprache oder zweisprachig',
+        full_professional: 'Verhandlungssicher',
+        professional_working: 'Fließend in Wort und Schrift',
+        limited_working: 'Gute Kenntnisse',
+        elementary: 'Grundkenntnisse',
+    },
+    fr: {
+        native: 'Bilingue ou langue maternelle',
+        full_professional: 'Courant',
+        professional_working: 'Professionnel',
+        limited_working: 'Notions avancées',
+        elementary: 'Notions de base',
+    },
+    es: {
+        native: 'Nativo o bilingüe',
+        full_professional: 'Competencia profesional completa',
+        professional_working: 'Competencia profesional',
+        limited_working: 'Competencia básica profesional',
+        elementary: 'Competencia elemental',
+    },
+};
+
+const PROFICIENCY_KEYS = ['native', 'full_professional', 'professional_working', 'limited_working', 'elementary'];
+
+function getProficiencyLevels(lang) {
+    const tr = PROFICIENCY_LEVELS_I18N[lang] || PROFICIENCY_LEVELS_I18N.en;
+    return PROFICIENCY_KEYS.map(k => ({ key: k, label: tr[k] }));
+}
+
+function getProficiencyLabel(key, lang) {
+    const tr = PROFICIENCY_LEVELS_I18N[lang] || PROFICIENCY_LEVELS_I18N.en;
+    return tr[key] || key;
+}
+
+// Legacy compat: old string values → keys
+const PROFICIENCY_LEGACY = {
+    'native': 'native', 'bilingual': 'native',
+    'native or bilingual proficiency': 'native',
+    'full professional proficiency': 'full_professional',
+    'professional working proficiency': 'professional_working',
+    'working proficiency': 'professional_working',
+    'limited working proficiency': 'limited_working',
+    'elementary proficiency': 'elementary',
+    'beginner': 'elementary',
+};
+
+function migrateProficiencyLevel(val) {
+    if (!val) return '';
+    if (PROFICIENCY_KEYS.includes(val)) return val;
+    return PROFICIENCY_LEGACY[val.toLowerCase()] || val;
+}
 
 function getLangFlag(langName) {
     const found = LANGUAGES_DB.find(l => l.name.toLowerCase() === (langName||'').toLowerCase());

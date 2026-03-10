@@ -514,6 +514,49 @@ def _add_courses(doc, courses, lang='en'):
             run.font.size = Pt(9)
             run.font.color.rgb = RGBColor(0x77, 0x77, 0x77)
 
+PROFICIENCY_LABELS = {
+    'en': {
+        'native': 'Native or bilingual proficiency',
+        'full_professional': 'Full professional proficiency',
+        'professional_working': 'Professional working proficiency',
+        'limited_working': 'Limited working proficiency',
+        'elementary': 'Elementary proficiency',
+    },
+    'pl': {
+        'native': 'Ojczysty lub dwujęzyczny',
+        'full_professional': 'Pełna biegłość zawodowa',
+        'professional_working': 'Profesjonalna znajomość robocza',
+        'limited_working': 'Ograniczona znajomość robocza',
+        'elementary': 'Znajomość podstawowa',
+    },
+    'de': {
+        'native': 'Muttersprache oder zweisprachig',
+        'full_professional': 'Verhandlungssicher',
+        'professional_working': 'Fließend in Wort und Schrift',
+        'limited_working': 'Gute Kenntnisse',
+        'elementary': 'Grundkenntnisse',
+    },
+    'fr': {
+        'native': 'Bilingue ou langue maternelle',
+        'full_professional': 'Courant',
+        'professional_working': 'Professionnel',
+        'limited_working': 'Notions avancées',
+        'elementary': 'Notions de base',
+    },
+    'es': {
+        'native': 'Nativo o bilingüe',
+        'full_professional': 'Competencia profesional completa',
+        'professional_working': 'Competencia profesional',
+        'limited_working': 'Competencia básica profesional',
+        'elementary': 'Competencia elemental',
+    },
+}
+
+def _proficiency_label(key, lang='en'):
+    """Convert proficiency key to translated label. Falls back to key as-is."""
+    labels = PROFICIENCY_LABELS.get(lang, PROFICIENCY_LABELS['en'])
+    return labels.get(key, key)
+
 def _add_languages(doc, languages, lang='en'):
     """Add languages section."""
     p = doc.add_paragraph(_t(lang, 'languages'), style='CVHeading1')
@@ -523,7 +566,8 @@ def _add_languages(doc, languages, lang='en'):
         p = doc.add_paragraph()
         run = p.add_run(f"{entry['language']}")
         run.font.bold = True
-        run = p.add_run(f" - {entry['level']}")
+        level = _proficiency_label(entry.get('level', ''), lang)
+        run = p.add_run(f" - {level}")
 
 def _add_certifications(doc, certifications, lang='en'):
     """Add certifications section."""
@@ -587,7 +631,7 @@ def generate_docx(data):
     _add_name_header(doc, data['personal'])
 
     section_order = data.get('section_order',
-                             ['summary', 'experience', 'skills', 'projects', 'education', 'courses', 'certifications', 'languages'])
+                             ['summary', 'experience', 'projects', 'education', 'courses', 'certifications', 'languages', 'skills'])
 
     section_map = {
         'summary': lambda: _add_summary(doc, data.get('summary', ''), lang),

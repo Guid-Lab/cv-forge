@@ -16,6 +16,22 @@ function wrapLink(href, content, color) {
     return `<a href="${esc(href)}" style="color:${color||'inherit'};text-decoration:none" target="_blank">${content}</a>`;
 }
 
+function photoStyle() {
+    const shape = cvData.photo_shape || 'circle';
+    const borderSetting = cvData.photo_border || 'auto';
+    const radius = shape === 'circle' ? '50%' : '8px';
+    let borderColor;
+    if (borderSetting === 'none') borderColor = 'transparent';
+    else if (borderSetting === 'custom' && cvData.photo_border_hex) borderColor = cvData.photo_border_hex;
+    else borderColor = getScheme().primary + '50';
+    return `border-radius:${radius};border:3px solid ${borderColor}`;
+}
+
+function renderPhoto(photo) {
+    if (!photo) return '';
+    return `<img class="cv-photo" src="${esc(photo)}" alt="" style="${photoStyle()}">`;
+}
+
 function renderLogoOrInitials(name, logoUrl, size) {
     if (logoUrl) return `<img src="${esc(logoUrl)}" style="width:${size}px;height:${size}px;border-radius:4px;object-fit:contain">`;
     return `<div style="width:${size}px;height:${size}px;border-radius:4px;background:${getColor(name)};display:flex;align-items:center;justify-content:center;color:white;font-size:${Math.floor(size*0.4)}px;font-weight:700;flex-shrink:0">${getInitials(name||'?')}</div>`;
@@ -25,6 +41,7 @@ function renderExpGroup(group) {
     const showLogo = cvData.show_company_logos !== false;
     const multiPos = group.positions.length > 1;
     const scheme = getScheme();
+    const hc = getHeadingColor();
     let html = `<div class="cv-exp-item">`;
 
     if (showLogo) {
@@ -38,14 +55,14 @@ function renderExpGroup(group) {
             html += `<div class="cv-timeline-pos">`;
             html += `<div class="cv-timeline-dot" style="background:${scheme.primary};box-shadow:0 0 0 2px ${scheme.primary}15"></div>`;
             html += `<div class="cv-timeline-content">`;
-            html += renderPositionContent(pos, scheme, groupUrl);
+            html += renderPositionContent(pos, hc, groupUrl);
             html += `</div></div>`;
         });
         html += `<div class="cv-timeline-end" style="background:${scheme.primary}40"></div>`;
         html += `</div>`;
     } else {
         html += `<div class="cv-exp-content">`;
-        html += renderPositionContent(group.positions[0], scheme, groupUrl);
+        html += renderPositionContent(group.positions[0], hc, groupUrl);
         html += `</div>`;
     }
 
@@ -53,12 +70,12 @@ function renderExpGroup(group) {
     return html;
 }
 
-function renderPositionContent(pos, scheme, groupUrl) {
+function renderPositionContent(pos, hc, groupUrl) {
     let html = '';
     const companyName = groupUrl
-        ? wrapLink(groupUrl.startsWith('http') ? groupUrl : 'https://'+groupUrl, esc(pos.display_company), scheme.primary)
+        ? wrapLink(groupUrl.startsWith('http') ? groupUrl : 'https://'+groupUrl, esc(pos.display_company), hc)
         : esc(pos.display_company);
-    html += `<div class="cv-exp-header"><span class="cv-exp-company" style="color:${scheme.primary}">${companyName}</span><span class="cv-exp-date">${esc(pos.date_from)} - ${esc(pos.date_to)}</span></div>`;
+    html += `<div class="cv-exp-header"><span class="cv-exp-company" style="color:${hc}">${companyName}</span><span class="cv-exp-date">${esc(pos.date_from)} - ${esc(pos.date_to)}</span></div>`;
     html += `<div class="cv-exp-role">${esc(pos.role)}</div>`;
 
     const fmt = pos.desc_format || 'bullets';
@@ -75,12 +92,11 @@ function renderPositionContent(pos, scheme, groupUrl) {
 function renderSidebar(p) {
     const scheme = getScheme();
     let contactsHtml = (p.contacts||[]).map(c => {
-        const lbl = c.label ? esc(c.label)+': ' : '';
         const val = c.link ? wrapLink(contactHref(c.icon, c.value), esc(c.value), 'rgba(255,255,255,0.8)') : esc(c.value);
-        return `<div class="cv-contact-item"><div class="cv-contact-icon">${getContactSvg(c.icon)}</div><span>${lbl}${val}</span></div>`;
+        return `<div class="cv-contact-item"><div class="cv-contact-icon">${getContactSvg(c.icon)}</div><span>${val}</span></div>`;
     }).join('');
-    const photoHtml = p.photo ? `<img class="cv-photo" src="${esc(p.photo)}" alt="">` : '';
-    return `<div class="cv-sidebar" style="background:${scheme.primary}">${photoHtml}<div class="cv-name">${esc(p.name)}</div><div class="cv-title-text">${esc(p.title)}</div><div style="margin-top:auto"></div>${contactsHtml}</div>`;
+    const photoHtml = renderPhoto(p.photo);
+    return `<div class="cv-sidebar" style="background:${scheme.primary}">${photoHtml}<div class="cv-name">${esc(p.name)}</div><div class="cv-title-text">${esc(p.title)}</div>${contactsHtml}</div>`;
 }
 
 function renderTopBar(p) {
@@ -89,18 +105,52 @@ function renderTopBar(p) {
         const val = c.link ? wrapLink(contactHref(c.icon, c.value), esc(c.value), 'rgba(255,255,255,0.8)') : esc(c.value);
         return `<span class="cv-topbar-contact">${getContactSvg(c.icon,'rgba(255,255,255,0.7)')} ${val}</span>`;
     }).join('');
-    const photoHtml = p.photo ? `<img class="cv-photo" src="${esc(p.photo)}" alt="">` : '';
+    const photoHtml = renderPhoto(p.photo);
     return `<div class="cv-topbar-header" style="background:${scheme.primary}">${photoHtml}<div class="cv-topbar-info"><div class="cv-topbar-name">${esc(p.name)}</div><div class="cv-topbar-title">${esc(p.title)}</div><div class="cv-topbar-contacts">${contactsHtml}</div></div></div>`;
 }
 
 function renderMinimalHeader(p) {
     const scheme = getScheme();
+    const hc = getHeadingColor();
     let contactsHtml = (p.contacts||[]).map(c => {
         const val = c.link ? wrapLink(contactHref(c.icon, c.value), esc(c.value), '#555') : esc(c.value);
         return `<span class="cv-min-contact">${getContactSvg(c.icon,'#888')} ${val}</span>`;
     }).join('');
-    const photoHtml = p.photo ? `<img class="cv-photo" src="${esc(p.photo)}" alt="">` : '';
-    return `<div class="cv-minimal-header">${photoHtml}<div class="cv-min-name" style="color:${scheme.primary}">${esc(p.name)}</div><div class="cv-min-title">${esc(p.title)}</div><div class="cv-min-line" style="background:${scheme.primary}"></div><div class="cv-min-contacts">${contactsHtml}</div></div>`;
+    const photoHtml = renderPhoto(p.photo);
+    return `<div class="cv-minimal-header">${photoHtml}<div class="cv-min-name" style="color:${hc}">${esc(p.name)}</div><div class="cv-min-title">${esc(p.title)}</div><div class="cv-min-line" style="background:${scheme.primary}"></div><div class="cv-min-contacts">${contactsHtml}</div></div>`;
+}
+
+function renderExecutiveHeader(p) {
+    const scheme = getScheme();
+    const hc = getHeadingColor();
+    let contactsHtml = (p.contacts||[]).map(c => {
+        const val = c.link ? wrapLink(contactHref(c.icon, c.value), esc(c.value), hc) : esc(c.value);
+        return `<span class="cv-exec-contact">${getContactSvg(c.icon, scheme.light)} ${val}</span>`;
+    }).join('<span class="cv-exec-sep">|</span>');
+    const photoHtml = renderPhoto(p.photo);
+    return `<div class="cv-executive-header">${photoHtml}<div class="cv-exec-name" style="color:${hc}">${esc(p.name)}</div><div class="cv-exec-title">${esc(p.title)}</div><div class="cv-exec-bar" style="background:${scheme.primary}"></div><div class="cv-exec-contacts">${contactsHtml}</div></div>`;
+}
+
+function renderModernHeader(p) {
+    const scheme = getScheme();
+    const hc = getHeadingColor();
+    let contactsHtml = (p.contacts||[]).map(c => {
+        const val = c.link ? wrapLink(contactHref(c.icon, c.value), esc(c.value), '#555') : esc(c.value);
+        return `<div class="cv-modern-contact">${getContactSvg(c.icon, scheme.primary)} ${val}</div>`;
+    }).join('');
+    const photoHtml = renderPhoto(p.photo);
+    return `<div class="cv-modern-header"><div class="cv-modern-accent" style="background:${scheme.primary}"></div><div class="cv-modern-header-content">${photoHtml}<div class="cv-modern-info"><div class="cv-modern-name" style="color:${hc}">${esc(p.name)}</div><div class="cv-modern-title">${esc(p.title)}</div></div><div class="cv-modern-contacts">${contactsHtml}</div></div></div>`;
+}
+
+function renderElegantSidebar(p) {
+    const scheme = getScheme();
+    const hc = getHeadingColor();
+    let contactsHtml = (p.contacts||[]).map(c => {
+        const val = c.link ? wrapLink(contactHref(c.icon, c.value), esc(c.value), hc) : esc(c.value);
+        return `<div class="cv-elegant-contact">${getContactSvg(c.icon, hc)} <span>${val}</span></div>`;
+    }).join('');
+    const photoHtml = renderPhoto(p.photo);
+    return `<div class="cv-elegant-sidebar" style="background:${scheme.primary}08;border-right:2px solid ${scheme.primary}20">${photoHtml}<div class="cv-elegant-name" style="color:${hc}">${esc(p.name)}</div><div class="cv-elegant-title">${esc(p.title)}</div><div class="cv-elegant-divider" style="background:${scheme.primary}30"></div>${contactsHtml}</div>`;
 }
 
 function updatePreview() {
@@ -110,31 +160,47 @@ function updatePreview() {
     const pagesContainer = document.getElementById('cv-pages');
     const p = cvData.personal;
     const scheme = getScheme();
+    const hc = getHeadingColor();
     const mainBlocks = [];
 
     const sectionRenderers = {
         summary: () => {
             if (!cvData.summary) return;
-            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${scheme.primary}">${t('summary')}</div><div class="cv-summary-text">${esc(cvData.summary)}</div>` });
+            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${hc}">${t('summary')}</div><div class="cv-summary-text">${esc(cvData.summary).replace(/\n/g,'<br>')}</div>` });
         },
         experience: () => {
             const visibleGroups = (cvData.employer_groups||[]).filter(g => !g.hidden);
             if (!visibleGroups.length) return;
-            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${scheme.primary}">${t('experience')}</div>`, keepWithNext: true });
+            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${hc}">${t('experience')}</div>`, keepWithNext: true });
             visibleGroups.forEach(group => { mainBlocks.push({ html: renderExpGroup(group) }); });
         },
         skills: () => {
             if (!cvData.skills || !cvData.skills.length) return;
             const cats = cvData.skills.filter(c => c.category || (c.items && c.items.length));
             if (!cats.length) return;
-            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${scheme.primary}">${t('skills')}</div>`, keepWithNext: true });
+            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${hc}">${t('skills')}</div>`, keepWithNext: true });
             let h = '<div class="cv-skills-grid">';
             cats.forEach(cat => {
-                h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${scheme.primary}">${esc(cat.category)}</span><div class="cv-skill-tags">`;
-                (cat.items||[]).forEach(item => {
-                    if (item) h += `<span class="cv-skill-tag" style="background:${scheme.primary}0d;color:${scheme.primary};border:1px solid ${scheme.primary}25">${esc(item)}</span>`;
-                });
-                h += '</div></div>';
+                const items = (cat.items||[]).filter(i=>i);
+                if (currentTheme === 'executive') {
+                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-inline" style="color:#555;font-size:9px">${items.map(i=>esc(i)).join(', ')}</div></div>`;
+                } else if (currentTheme === 'modern') {
+                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-tags">`;
+                    items.forEach(item => {
+                        h += `<span class="cv-skill-tag cv-skill-modern" style="border-left:2px solid ${scheme.primary};background:#f8f9fb;color:#333">${esc(item)}</span>`;
+                    });
+                    h += '</div></div>';
+                } else if (currentTheme === 'elegant') {
+                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-inline" style="color:#555;font-size:9px">${items.map(i=>`<span style="background:${scheme.primary}08;padding:1px 6px;border-radius:2px">${esc(i)}</span>`).join(' ')}</div></div>`;
+                } else if (currentTheme === 'minimal') {
+                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-inline" style="color:#555;font-size:9px">${items.map(i=>esc(i)).join(' · ')}</div></div>`;
+                } else {
+                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-tags">`;
+                    items.forEach(item => {
+                        h += `<span class="cv-skill-tag" style="background:${scheme.primary}0d;color:${scheme.primary};border:1px solid ${scheme.primary}25">${esc(item)}</span>`;
+                    });
+                    h += '</div></div>';
+                }
             });
             h += '</div>';
             mainBlocks.push({ html: h });
@@ -143,13 +209,13 @@ function updatePreview() {
             if (!cvData.projects || !cvData.projects.length) return;
             const projs = cvData.projects.filter(p => p.name);
             if (!projs.length) return;
-            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${scheme.primary}">${t('projects')}</div>`, keepWithNext: true });
+            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${hc}">${t('projects')}</div>`, keepWithNext: true });
             projs.forEach(proj => {
                 const projName = proj.url
-                    ? wrapLink(proj.url.startsWith('http') ? proj.url : 'https://'+proj.url, esc(proj.name), scheme.primary)
+                    ? wrapLink(proj.url.startsWith('http') ? proj.url : 'https://'+proj.url, esc(proj.name), hc)
                     : esc(proj.name);
                 let h = `<div class="cv-project-item">`;
-                h += `<div class="cv-exp-header"><span class="cv-exp-company" style="color:${scheme.primary}">${projName}</span>`;
+                h += `<div class="cv-exp-header"><span class="cv-exp-company" style="color:${hc}">${projName}</span>`;
                 if (proj.date_from || proj.date_to) h += `<span class="cv-exp-date">${esc(proj.date_from||'')} - ${esc(proj.date_to||'')}</span>`;
                 h += `</div>`;
                 if (proj.role) h += `<div class="cv-exp-role" style="font-style:italic">${esc(proj.role)}</div>`;
@@ -162,8 +228,8 @@ function updatePreview() {
             if (!cvData.courses || !cvData.courses.length) return;
             const crs = cvData.courses.filter(c => c.name);
             if (!crs.length) return;
-            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${scheme.primary}">${t('courses')}</div>`, keepWithNext: true });
-            let h = '<div class="cv-courses-list">';
+            let h = `<div class="cv-section-title" style="color:${hc}">${t('courses')}</div>`;
+            h += '<div class="cv-courses-list">';
             crs.forEach(course => {
                 const courseName = course.url
                     ? wrapLink(course.url.startsWith('http') ? course.url : 'https://'+course.url, esc(course.name), '#555')
@@ -179,22 +245,22 @@ function updatePreview() {
         },
         education: () => {
             if (!cvData.education || !cvData.education.length) return;
-            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${scheme.primary}">${t('education')}</div>`, keepWithNext: true });
+            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${hc}">${t('education')}</div>`, keepWithNext: true });
             cvData.education.forEach(edu => {
                 const eduLogo = edu.logo
                     ? `<div class="cv-edu-logo" style="background:transparent"><img src="${esc(edu.logo)}" style="width:28px;height:28px;object-fit:contain;border-radius:4px"></div>`
                     : `<div class="cv-edu-logo" style="background:${getColor(edu.institution)}"><svg viewBox="0 0 16 16" width="14" height="14"><path d="M8 0L0 4l8 4 8-4L8 0zM0 6v4l8 4 8-4V6L8 10 0 6z" fill="white"/></svg></div>`;
                 const eduName = edu.url
-                    ? wrapLink(edu.url.startsWith('http') ? edu.url : 'https://'+edu.url, esc(edu.institution), scheme.primary)
+                    ? wrapLink(edu.url.startsWith('http') ? edu.url : 'https://'+edu.url, esc(edu.institution), hc)
                     : esc(edu.institution);
                 const eduDegreeText = [edu.level, edu.degree].filter(x=>x).join(' — ');
-                mainBlocks.push({ html: `<div class="cv-edu-item">${eduLogo}<div class="cv-edu-content"><div class="cv-edu-header"><span class="cv-edu-institution" style="color:${scheme.primary}">${eduName}</span><span class="cv-edu-date">${esc(edu.date_from)} - ${esc(edu.date_to)}</span></div><div class="cv-edu-degree">${esc(eduDegreeText)}</div></div></div>` });
+                mainBlocks.push({ html: `<div class="cv-edu-item">${eduLogo}<div class="cv-edu-content"><div class="cv-edu-header"><span class="cv-edu-institution" style="color:${hc}">${eduName}</span><span class="cv-edu-date">${esc(edu.date_from)} - ${esc(edu.date_to)}</span></div><div class="cv-edu-degree">${esc(eduDegreeText)}</div></div></div>` });
             });
         },
         languages: () => {
             if (!cvData.languages || !cvData.languages.length) return;
-            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${scheme.primary}">${t('languages')}</div>`, keepWithNext: true });
             const showFlags = cvData.show_lang_flags !== false;
+            let h = `<div class="cv-section-title" style="color:${hc}">${t('languages')}</div>`;
             cvData.languages.forEach(lang => {
                 let flagHtml = '';
                 if (showFlags) {
@@ -204,20 +270,22 @@ function updatePreview() {
                         flagHtml = `<div class="cv-lang-flag" style="border:1px solid #eee;border-radius:2px">${FLAGS[lang.flag]}</div>`;
                     }
                 }
-                mainBlocks.push({ html: `<div class="cv-lang-item">${flagHtml}<span><span class="cv-lang-name">${esc(lang.language)}</span> - ${esc(lang.level)}</span></div>` });
+                const levelText = getProficiencyLabel(lang.level, cvData.cv_language || 'en');
+                h += `<div class="cv-lang-item">${flagHtml}<span><span class="cv-lang-name">${esc(lang.language)}</span> - ${esc(levelText)}</span></div>`;
             });
+            mainBlocks.push({ html: h });
         },
         certifications: () => {
             if (!cvData.certifications || !cvData.certifications.length) return;
-            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${scheme.primary}">${t('certifications')}</div>`, keepWithNext: true });
+            mainBlocks.push({ html: `<div class="cv-section-title" style="color:${hc}">${t('certifications')}</div>`, keepWithNext: true });
             const showCertLogos = cvData.show_cert_logos !== false;
             cvData.certifications.forEach(g => {
                 let h = `<div class="cv-cert-group">`;
                 if (showCertLogos) h += `<div style="flex-shrink:0">${renderLogoOrInitials(g.issuer, g.logo, 32)}</div>`;
                 const issuerName = g.issuer_url
-                    ? wrapLink(g.issuer_url.startsWith('http') ? g.issuer_url : 'https://'+g.issuer_url, esc(g.issuer), scheme.primary)
+                    ? wrapLink(g.issuer_url.startsWith('http') ? g.issuer_url : 'https://'+g.issuer_url, esc(g.issuer), hc)
                     : esc(g.issuer);
-                h += `<div class="cv-cert-content"><div class="cv-cert-issuer" style="color:${scheme.primary}">${issuerName}</div>`;
+                h += `<div class="cv-cert-content"><div class="cv-cert-issuer" style="color:${hc}">${issuerName}</div>`;
                 g.items.forEach(item => {
                     const certName = typeof item === 'string' ? item : (item.name || '');
                     const certUrl = typeof item === 'string' ? '' : (item.url || '');
@@ -242,20 +310,38 @@ function updatePreview() {
         }
     });
 
-    if (cvData.clause_enabled && cvData.clause_text) {
-        mainBlocks.push({ html: `<div class="cv-clause">${esc(cvData.clause_text)}</div>` });
+    const hasClause = cvData.clause_enabled && cvData.clause_text;
+    let clauseHtml = '';
+    if (hasClause) {
+        const ct = esc(cvData.clause_text);
+        if (currentTheme === 'sidebar' || currentTheme === 'topbar') {
+            clauseHtml = `<div class="cv-clause-footer cv-clause-dark" style="background:${scheme.primary};color:rgba(255,255,255,0.7)">${ct}</div>`;
+        } else if (currentTheme === 'modern') {
+            clauseHtml = `<div class="cv-clause-footer cv-clause-accent" style="border-left:3px solid ${scheme.primary};background:#f8f9fb">${ct}</div>`;
+        } else if (currentTheme === 'elegant') {
+            clauseHtml = `<div class="cv-clause-footer cv-clause-soft" style="background:${scheme.primary}08;border-top:1px solid ${scheme.primary}20">${ct}</div>`;
+        } else {
+            clauseHtml = `<div class="cv-clause-footer">${ct}</div>`;
+        }
     }
 
     const isSidebar = currentTheme === 'sidebar';
-    const PAGE1_MAIN_W = isSidebar ? (PAGE_W - SIDEBAR_W - 64) : (PAGE_W - 80);
+    const isElegant = currentTheme === 'elegant';
+    const isModern = currentTheme === 'modern';
+    const hasSideColumn = isSidebar || isElegant;
+    const sideW = isElegant ? 200 : SIDEBAR_W;
+    const PAGE1_MAIN_W = hasSideColumn ? (PAGE_W - sideW - 64) : isModern ? (PAGE_W - 88) : (PAGE_W - 80);
     const PAGE_CONTENT_W = PAGE_W - 80;
     const USABLE_H = PAGE_H - 60;
 
     const measure = document.getElementById('cv-measure');
     let headerHeight = 0;
-    if (!isSidebar) {
-        measure.style.width = PAGE_CONTENT_W+'px'; measure.style.padding = '0';
-        measure.innerHTML = currentTheme==='topbar' ? renderTopBar(p) : renderMinimalHeader(p);
+    if (!hasSideColumn) {
+        measure.style.width = (isModern ? PAGE_W - 88 : PAGE_CONTENT_W)+'px'; measure.style.padding = '0';
+        if (currentTheme==='topbar') measure.innerHTML = renderTopBar(p);
+        else if (currentTheme==='executive') measure.innerHTML = renderExecutiveHeader(p);
+        else if (isModern) measure.innerHTML = renderModernHeader(p);
+        else measure.innerHTML = renderMinimalHeader(p);
         headerHeight = measure.offsetHeight;
     }
 
@@ -266,7 +352,7 @@ function updatePreview() {
     measure.innerHTML = ''; measure.style.width = '';
 
     const pages = [{ blocks: [], isFirst: true }];
-    let curH = isSidebar ? 0 : headerHeight, curPage = 0;
+    let curH = hasSideColumn ? 0 : headerHeight, curPage = 0;
     for (let i=0; i<mainBlocks.length; i++) {
         const block = mainBlocks[i];
         const heights = curPage===0 ? p1H : pNH;
@@ -280,17 +366,35 @@ function updatePreview() {
     let pagesHtml = '';
     pages.forEach((page,idx) => {
         const content = page.blocks.map(b=>b.html).join('');
+        const isLast = idx === pages.length - 1;
+        const footer = isLast ? clauseHtml : '';
         const num = `<div class="preview-page-number">${idx+1} / ${pages.length}</div>`;
         if (page.isFirst && isSidebar)
-            pagesHtml += `<div class="preview-page"><div class="cv-page1-layout">${renderSidebar(p)}<div class="cv-main">${content}</div></div>${num}</div>`;
+            pagesHtml += `<div class="preview-page"><div class="cv-page1-layout">${renderSidebar(p)}<div class="cv-main">${content}</div></div>${footer}${num}</div>`;
+        else if (page.isFirst && isElegant)
+            pagesHtml += `<div class="preview-page"><div class="cv-elegant-layout">${renderElegantSidebar(p)}<div class="cv-elegant-main">${content}</div></div>${footer}${num}</div>`;
         else if (page.isFirst && currentTheme==='topbar')
-            pagesHtml += `<div class="preview-page">${renderTopBar(p)}<div class="cv-content-page">${content}</div>${num}</div>`;
+            pagesHtml += `<div class="preview-page">${renderTopBar(p)}<div class="cv-content-page">${content}</div>${footer}${num}</div>`;
+        else if (page.isFirst && currentTheme==='executive')
+            pagesHtml += `<div class="preview-page"><div class="cv-content-page">${renderExecutiveHeader(p)}${content}</div>${footer}${num}</div>`;
+        else if (page.isFirst && isModern)
+            pagesHtml += `<div class="preview-page">${renderModernHeader(p)}<div class="cv-modern-content">${content}</div>${footer}${num}</div>`;
         else if (page.isFirst && currentTheme==='minimal')
-            pagesHtml += `<div class="preview-page"><div class="cv-content-page">${renderMinimalHeader(p)}${content}</div>${num}</div>`;
-        else
-            pagesHtml += `<div class="preview-page"><div class="cv-content-page">${content}</div>${num}</div>`;
+            pagesHtml += `<div class="preview-page"><div class="cv-content-page">${renderMinimalHeader(p)}${content}</div>${footer}${num}</div>`;
+        else {
+            let accent = '';
+            if (isSidebar) accent = `<div class="cv-accent-left" style="background:${scheme.primary}"></div>`;
+            else if (isElegant) accent = `<div class="cv-accent-left cv-accent-elegant" style="background:${scheme.primary}08;border-right:2px solid ${scheme.primary}20"></div>`;
+            else if (isModern) accent = `<div class="cv-accent-left cv-accent-modern" style="background:${scheme.primary}"></div>`;
+            else if (currentTheme==='topbar') accent = `<div class="cv-accent-top" style="background:${scheme.primary}"></div>`;
+            else if (currentTheme==='executive') accent = `<div class="cv-accent-top cv-accent-exec" style="background:${scheme.primary}"></div>`;
+            else if (currentTheme==='minimal') accent = `<div class="cv-accent-top cv-accent-minimal" style="background:${scheme.primary}"></div>`;
+            pagesHtml += `<div class="preview-page">${accent}<div class="cv-content-page">${content}</div>${footer}${num}</div>`;
+        }
     });
     pagesContainer.innerHTML = pagesHtml;
+    const fontFamily = getFont().family;
+    pagesContainer.querySelectorAll('.preview-page').forEach(p => p.style.fontFamily = fontFamily);
     scheduleAutoSave();
 }
 
@@ -463,7 +567,7 @@ function renderAtsPreview() {
             if (!cvData.languages || !cvData.languages.length) return;
             html += `<div class="ats-section-title">${t('languages')}</div>`;
             cvData.languages.forEach(lang => {
-                html += `<div class="ats-text"><strong>${esc(lang.language)}</strong> - ${esc(lang.level)}</div>`;
+                html += `<div class="ats-text"><strong>${esc(lang.language)}</strong> - ${esc(getProficiencyLabel(lang.level, cvData.cv_language || 'en'))}</div>`;
             });
             html += '<div class="ats-hr"></div>';
         }
