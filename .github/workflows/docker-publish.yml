@@ -1,4 +1,4 @@
-name: Publish Docker image
+name: Publish and Deploy
 
 on:
   push:
@@ -21,3 +21,9 @@ jobs:
           tags: |
             guidlab/cv-forge:latest
             guidlab/cv-forge:${{ github.sha }}
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
