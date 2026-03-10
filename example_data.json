@@ -1,0 +1,314 @@
+{
+  "certifications": [
+    {
+      "issuer": "AWS",
+      "issuer_url": "https://aws.amazon.com/certification/",
+      "logo": "",
+      "items": [
+        { "name": "AWS SAP - Certified Solutions Architect - Professional", "url": "" },
+        { "name": "AWS SAA - Certified Solutions Architect - Associate", "url": "" },
+        { "name": "AWS CP - Certified Cloud Practitioner", "url": "" }
+      ]
+    },
+    {
+      "issuer": "Microsoft",
+      "issuer_url": "https://learn.microsoft.com/en-us/credentials/",
+      "logo": "",
+      "items": [
+        { "name": "AZ-305 - Azure Solutions Architect Expert", "url": "" },
+        { "name": "AZ-104 - Azure Administrator Associate", "url": "" },
+        { "name": "AZ-900 - Azure Fundamentals", "url": "" }
+      ]
+    },
+    {
+      "issuer": "Google",
+      "issuer_url": "https://cloud.google.com/certification",
+      "logo": "",
+      "items": [
+        { "name": "Google Cloud Professional Cloud Architect", "url": "" },
+        { "name": "Google Cloud Associate Cloud Engineer", "url": "" }
+      ]
+    },
+    {
+      "issuer": "HashiCorp",
+      "issuer_url": "https://www.hashicorp.com/certifications",
+      "logo": "",
+      "items": [
+        { "name": "Terraform Associate", "url": "" }
+      ]
+    },
+    {
+      "issuer": "Linux Foundation",
+      "issuer_url": "https://training.linuxfoundation.org/",
+      "logo": "",
+      "items": [
+        { "name": "CKA - Certified Kubernetes Administrator", "url": "" },
+        { "name": "CKAD - Certified Kubernetes Application Developer", "url": "" }
+      ]
+    }
+  ],
+  "color_scheme": "ocean",
+  "courses": [
+    {
+      "name": "System Design for Interviews",
+      "provider": "Educative",
+      "url": "",
+      "date": "2024"
+    },
+    {
+      "name": "Advanced Docker & Kubernetes",
+      "provider": "Udemy",
+      "url": "",
+      "date": "2023"
+    },
+    {
+      "name": "AWS Well-Architected Framework",
+      "provider": "AWS Training",
+      "url": "",
+      "date": "2022"
+    }
+  ],
+  "desc_format": "bullets",
+  "disabled_sections": [],
+  "education": [
+    {
+      "institution": "Technical University of Munich",
+      "level": "MSc",
+      "degree": "Computer Science",
+      "date_from": "October 2012",
+      "date_to": "June 2014",
+      "logo": "",
+      "url": "https://www.tum.de"
+    },
+    {
+      "institution": "University of Warsaw",
+      "level": "BSc",
+      "degree": "Mathematics & Computer Science",
+      "date_from": "October 2009",
+      "date_to": "June 2012",
+      "logo": "",
+      "url": "https://www.uw.edu.pl"
+    }
+  ],
+  "employer_groups": [
+    {
+      "id": "g1000001",
+      "group_name": "Spotify",
+      "url": "https://www.spotify.com",
+      "logo": "",
+      "hidden": false,
+      "positions": [
+        {
+          "display_company": "Spotify",
+          "role": "Staff Platform Engineer",
+          "date_from": "March 2023",
+          "date_to": "Present",
+          "desc_format": "bullets",
+          "bullets": [
+            "Architected and led migration of 200+ microservices to Kubernetes, reducing infrastructure costs by 35%",
+            "Designed multi-region deployment strategy for 99.99% availability across 3 AWS regions",
+            "Mentored a team of 8 engineers and established platform engineering best practices",
+            "Built internal developer platform with self-service provisioning, reducing onboarding time from 2 weeks to 2 hours"
+          ],
+          "rich_description": ""
+        }
+      ]
+    },
+    {
+      "id": "g1000002",
+      "group_name": "Stripe",
+      "url": "https://stripe.com",
+      "logo": "",
+      "hidden": false,
+      "positions": [
+        {
+          "display_company": "Stripe",
+          "role": "Senior Infrastructure Engineer",
+          "date_from": "June 2021",
+          "date_to": "February 2023",
+          "desc_format": "bullets",
+          "bullets": [
+            "Designed and implemented CI/CD pipelines processing 500+ deployments per day",
+            "Led observability initiative — deployed distributed tracing across payment processing stack",
+            "Reduced mean time to recovery (MTTR) from 45 to 8 minutes through automated incident response",
+            "Contributed to infrastructure-as-code migration using Terraform and Pulumi"
+          ],
+          "rich_description": ""
+        }
+      ]
+    },
+    {
+      "id": "g1000003",
+      "group_name": "Zalando",
+      "url": "https://www.zalando.com",
+      "logo": "",
+      "hidden": false,
+      "positions": [
+        {
+          "display_company": "Zalando",
+          "role": "Senior DevOps Engineer",
+          "date_from": "January 2019",
+          "date_to": "May 2021",
+          "desc_format": "bullets",
+          "bullets": [
+            "Managed Kubernetes clusters serving 50M+ monthly active users",
+            "Implemented GitOps workflows with ArgoCD and Flux for 120+ services",
+            "Designed monitoring and alerting stack using Prometheus, Grafana, and PagerDuty"
+          ],
+          "rich_description": ""
+        },
+        {
+          "display_company": "Zalando",
+          "role": "DevOps Engineer",
+          "date_from": "March 2017",
+          "date_to": "December 2018",
+          "desc_format": "bullets",
+          "bullets": [
+            "Automated infrastructure provisioning with Terraform across AWS and GCP",
+            "Built and maintained Docker-based development environments for 40+ engineering teams",
+            "Reduced deployment failures by 60% through improved testing and staging pipelines"
+          ],
+          "rich_description": ""
+        }
+      ]
+    },
+    {
+      "id": "g1000004",
+      "group_name": "SAP",
+      "url": "https://www.sap.com",
+      "logo": "",
+      "hidden": false,
+      "positions": [
+        {
+          "display_company": "SAP",
+          "role": "Cloud Engineer",
+          "date_from": "July 2014",
+          "date_to": "February 2017",
+          "desc_format": "bullets",
+          "bullets": [
+            "Deployed and managed SAP HANA Cloud Platform services across enterprise clients",
+            "Developed automation scripts in Python and Bash for infrastructure management",
+            "Supported migration of on-premise workloads to cloud environments"
+          ],
+          "rich_description": ""
+        }
+      ]
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "level": "Native",
+      "flag": "gb"
+    },
+    {
+      "language": "German",
+      "level": "Professional working proficiency",
+      "flag": "de"
+    },
+    {
+      "language": "Polish",
+      "level": "Limited working proficiency",
+      "flag": "pl"
+    }
+  ],
+  "personal": {
+    "name": "ALEX MORGAN",
+    "title": "STAFF PLATFORM ENGINEER",
+    "photo": "",
+    "contacts": [
+      {
+        "type": "location",
+        "icon": "location",
+        "label": "",
+        "value": "Berlin, Germany",
+        "link": false
+      },
+      {
+        "type": "email",
+        "icon": "email",
+        "label": "",
+        "value": "alex.morgan@example.com",
+        "link": true
+      },
+      {
+        "type": "phone",
+        "icon": "phone",
+        "label": "",
+        "value": "+49 170 555 1234",
+        "link": true
+      },
+      {
+        "type": "linkedin",
+        "icon": "linkedin",
+        "label": "",
+        "value": "linkedin.com/in/alexmorgan",
+        "link": true
+      },
+      {
+        "type": "github",
+        "icon": "github",
+        "label": "",
+        "value": "github.com/alexmorgan",
+        "link": true
+      }
+    ]
+  },
+  "projects": [
+    {
+      "name": "KubeFlow Orchestrator",
+      "url": "https://github.com/alexmorgan/kubeflow-orchestrator",
+      "role": "Creator & Maintainer",
+      "date_from": "January 2022",
+      "date_to": "Present",
+      "description": "Open-source tool for orchestrating ML pipelines on Kubernetes with automatic scaling and cost optimization. 2.5k GitHub stars."
+    },
+    {
+      "name": "InfraCost Dashboard",
+      "url": "",
+      "role": "Lead Developer",
+      "date_from": "March 2020",
+      "date_to": "December 2021",
+      "description": "Internal dashboard for real-time cloud cost monitoring across AWS, GCP, and Azure with anomaly detection and budget alerts."
+    }
+  ],
+  "section_order": [
+    "summary",
+    "experience",
+    "skills",
+    "projects",
+    "certifications",
+    "education",
+    "courses",
+    "languages"
+  ],
+  "show_cert_logos": true,
+  "show_company_logos": true,
+  "show_lang_flags": true,
+  "skills": [
+    {
+      "category": "Cloud & Infrastructure",
+      "items": ["AWS", "GCP", "Azure", "Terraform", "Pulumi", "CloudFormation"]
+    },
+    {
+      "category": "Containers & Orchestration",
+      "items": ["Kubernetes", "Docker", "Helm", "ArgoCD", "Flux", "Istio"]
+    },
+    {
+      "category": "CI/CD & Automation",
+      "items": ["GitHub Actions", "GitLab CI", "Jenkins", "Ansible", "Packer"]
+    },
+    {
+      "category": "Observability",
+      "items": ["Prometheus", "Grafana", "Datadog", "OpenTelemetry", "ELK Stack", "PagerDuty"]
+    },
+    {
+      "category": "Programming",
+      "items": ["Python", "Go", "Bash", "TypeScript", "SQL"]
+    }
+  ],
+  "summary": "Staff Platform Engineer with 10+ years of experience building and scaling cloud infrastructure for high-traffic products. Specialized in Kubernetes, multi-cloud architectures, and developer platform tooling. Proven track record of leading infrastructure teams, reducing costs, and improving system reliability to 99.99% uptime. Passionate about developer experience and infrastructure-as-code.",
+  "cv_language": "en",
+  "clause_enabled": false,
+  "clause_text": ""
+}

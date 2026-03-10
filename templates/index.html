@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Forge</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="top-bar">
+        <div class="top-bar-left">
+            <h1>CV Forge</h1>
+            <span class="subtitle">ATS & Visual Resume Builder</span>
+            <div id="ui-lang-selector" class="ui-lang-selector"></div>
+        </div>
+        <div class="top-bar-right">
+            <button class="btn btn-save" onclick="loadDataFromFile()">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 1h10c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2V3c0-1.1.9-2 2-2zm5 3L4 8h3v5h2V8h3L8 4z" fill="currentColor"/></svg>
+                <span id="btn-load-text">Load</span>
+            </button>
+            <button class="btn btn-save" onclick="clearAllData()">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M5 2V1h6v1h4v2h-1.1l-.8 10c-.1 1-.9 1.7-1.9 1.7H4.8c-1 0-1.8-.8-1.9-1.7L2.1 4H1V2h4zm1 3v7h1V5H6zm3 0v7h1V5H9z" fill="currentColor"/></svg>
+                <span id="btn-clear-text">Clear</span>
+            </button>
+            <button class="btn btn-save" onclick="fetchAllLogos()">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 3h14v10H1V3zm1 1v5l3-2.5L8 9l3-3 3 2.5V4H2zm3 1.5a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" fill="currentColor"/></svg>
+                <span id="btn-fetch-all-logos-text">Fetch all logos</span>
+            </button>
+            <button class="btn btn-save" onclick="saveData()">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 12L3 7h3V1h4v6h3L8 12zm-6 3h12v-2H2v2z" fill="currentColor"/></svg>
+                <span id="btn-export-text">Export JSON</span>
+            </button>
+            <div class="download-dropdown">
+                <button class="btn btn-primary dropdown-toggle" onclick="toggleDownloadMenu(this)">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 12L3 7h3V1h4v6h3L8 12zm-6 3h12v-2H2v2z" fill="currentColor"/></svg>
+                    <span id="btn-download-text">Download</span>
+                    <svg class="chevron" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </button>
+                <div class="download-menu">
+                    <div class="download-menu-group">
+                        <div class="download-menu-label" id="dl-label-ats">ATS-Friendly</div>
+                        <button onclick="downloadAtsDocx()">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 1h5l4 4v8c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V3c0-1.1.9-2 2-2z" stroke="#2563eb" stroke-width="1.2" fill="none"/><path d="M9 1v4h4" stroke="#2563eb" stroke-width="1.2" fill="none"/><text x="4" y="12" font-size="5" fill="#2563eb" font-weight="700">W</text></svg>
+                            DOCX
+                            <span class="dl-hint" id="dl-hint-docx">For recruitment systems</span>
+                        </button>
+                        <button onclick="downloadAtsPdf()">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 1h5l4 4v8c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V3c0-1.1.9-2 2-2z" stroke="#dc2626" stroke-width="1.2" fill="none"/><path d="M9 1v4h4" stroke="#dc2626" stroke-width="1.2" fill="none"/><text x="3" y="12" font-size="4.5" fill="#dc2626" font-weight="700">PDF</text></svg>
+                            PDF
+                            <span class="dl-hint" id="dl-hint-ats-pdf">Simple text format</span>
+                        </button>
+                    </div>
+                    <div class="download-menu-divider"></div>
+                    <div class="download-menu-group">
+                        <div class="download-menu-label" id="dl-label-visual">Visual CV</div>
+                        <button onclick="downloadPrettyPdf()">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 1h5l4 4v8c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V3c0-1.1.9-2 2-2z" stroke="#dc2626" stroke-width="1.2" fill="none"/><path d="M9 1v4h4" stroke="#dc2626" stroke-width="1.2" fill="none"/><text x="3" y="12" font-size="4.5" fill="#dc2626" font-weight="700">PDF</text></svg>
+                            PDF
+                            <span class="dl-hint" id="dl-hint-pretty-pdf">Identical to preview</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="layout">
+        <div class="editor-panel">
+            <div class="theme-selector">
+                <span class="theme-label" id="theme-label-text">Theme:</span>
+                <button class="theme-btn active" data-theme="sidebar" onclick="setTheme('sidebar', this)">
+                    <div class="theme-preview tp-sidebar"><div class="tp-side"></div><div class="tp-main"></div></div>
+                    Sidebar
+                </button>
+                <button class="theme-btn" data-theme="topbar" onclick="setTheme('topbar', this)">
+                    <div class="theme-preview tp-topbar"><div class="tp-top"></div><div class="tp-body"></div></div>
+                    Top Bar
+                </button>
+                <button class="theme-btn" data-theme="minimal" onclick="setTheme('minimal', this)">
+                    <div class="theme-preview tp-minimal"><div class="tp-line"></div><div class="tp-body2"></div></div>
+                    Minimal
+                </button>
+            </div>
+
+            <div class="panel-tabs" id="panel-tabs">
+                <button class="tab active" data-tab="settings" onclick="switchTab(this)">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:-2px;margin-right:3px"><path d="M8 10a2 2 0 100-4 2 2 0 000 4zm6.3-1.8l-1-.6a5.2 5.2 0 000-1.2l1-.6c.2-.1.2-.3.1-.5l-1-1.7c-.1-.2-.3-.2-.5-.1l-1 .6a5.4 5.4 0 00-1-.6V2.4c0-.2-.2-.4-.4-.4h-2c-.2 0-.4.2-.4.4v1.1a5 5 0 00-1 .6l-1-.6c-.2-.1-.4 0-.5.1l-1 1.7c-.1.2 0 .4.1.5l1 .6a5.2 5.2 0 000 1.2l-1 .6c-.2.1-.2.3-.1.5l1 1.7c.1.2.3.2.5.1l1-.6c.3.2.7.4 1 .6v1.1c0 .2.2.4.4.4h2c.2 0 .4-.2.4-.4v-1.1a5 5 0 001-.6l1 .6c.2.1.4 0 .5-.1l1-1.7c.1-.2 0-.4-.1-.5z" fill="currentColor"/></svg>
+                    <span id="tab-text-settings">Settings</span>
+                </button>
+                <button class="tab" data-tab="personal" onclick="switchTab(this)"><span id="tab-text-personal">Personal info</span></button>
+                <button class="tab" data-tab="summary" onclick="switchTab(this)"><span id="tab-text-summary">Summary</span></button>
+                <button class="tab" data-tab="experience" onclick="switchTab(this)"><span id="tab-text-experience">Experience</span></button>
+                <button class="tab" data-tab="education" onclick="switchTab(this)"><span id="tab-text-education">Education</span></button>
+                <button class="tab" data-tab="skills" onclick="switchTab(this)"><span id="tab-text-skills">Skills</span></button>
+                <button class="tab" data-tab="projects" onclick="switchTab(this)"><span id="tab-text-projects">Projects</span></button>
+                <button class="tab" data-tab="courses" onclick="switchTab(this)"><span id="tab-text-courses">Courses</span></button>
+                <button class="tab" data-tab="languages" onclick="switchTab(this)"><span id="tab-text-languages">Languages</span></button>
+                <button class="tab" data-tab="certifications" onclick="switchTab(this)"><span id="tab-text-certifications">Certifications</span></button>
+            </div>
+            <div class="tab-content active" id="tab-settings">
+                <h3 style="margin-bottom:4px;font-size:14px;color:#1a233b" id="settings-cv-lang-title">CV Language</h3>
+                <p style="font-size:10px;color:#999;margin-bottom:10px" id="settings-cv-lang-hint">Affects section names and default clause. Does not translate CV content.</p>
+                <div id="cv-language-selector" class="cv-lang-selector"></div>
+
+                <h3 style="margin:24px 0 4px;font-size:14px;color:#1a233b" id="settings-clause-title">GDPR Clause</h3>
+                <p style="font-size:10px;color:#999;margin-bottom:10px" id="settings-clause-hint">Optional data processing consent clause at the bottom of CV.</p>
+                <label class="toggle-label" style="margin-bottom:8px">
+                    <input type="checkbox" id="toggle-clause" onchange="toggleClause()">
+                    <span id="settings-clause-toggle-text">Add clause to CV</span>
+                </label>
+                <div id="clause-editor" style="display:none">
+                    <textarea id="clause-text" rows="4" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:inherit;color:var(--text);resize:vertical;line-height:1.5" onchange="updatePreview()"></textarea>
+                    <button class="btn-add-cert-item" onclick="resetClauseToDefault()" style="margin-top:4px;font-size:11px" id="settings-clause-reset">Reset to default clause</button>
+                </div>
+
+                <h3 style="margin:24px 0 4px;font-size:14px;color:#1a233b" id="settings-sections-title">CV Sections</h3>
+                <p style="font-size:10px;color:#999;margin-bottom:10px" id="settings-sections-hint">Drag to reorder. Eye icon enables/disables section in CV and tabs.</p>
+                <div id="section-order-list"></div>
+
+                <h3 style="margin:24px 0 4px;font-size:14px;color:#1a233b"><span id="settings-visual-title">Visual options</span> <span class="pretty-only-badge" id="settings-visual-badge">Pretty only</span></h3>
+                <p style="font-size:10px;color:#999;margin-bottom:10px" id="settings-visual-hint">These options affect only the visual CV. Logos, colors, and theme are not used in ATS version.</p>
+                <div class="toggle-group">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="toggle-company-logos" onchange="updateToggles()">
+                        <span id="settings-toggle-logos">Show company logos</span>
+                    </label>
+                    <label class="toggle-label">
+                        <input type="checkbox" id="toggle-cert-logos" onchange="updateToggles()">
+                        <span id="settings-toggle-cert-logos">Show certification issuer logos</span>
+                    </label>
+                    <label class="toggle-label">
+                        <input type="checkbox" id="toggle-lang-flags" onchange="updateToggles()">
+                        <span id="settings-toggle-flags">Show flags for languages</span>
+                    </label>
+                </div>
+
+                <h3 style="margin:24px 0 12px;font-size:14px;color:#1a233b"><span id="settings-color-title">Color scheme</span> <span class="pretty-only-badge" id="settings-color-badge">Pretty only</span></h3>
+                <div id="color-scheme-list" class="color-scheme-grid"></div>
+            </div>
+            <div class="tab-content" id="tab-personal">
+                <div class="form-group">
+                    <label><span id="lbl-photo">Candidate photo</span> <span style="font-weight:400;color:#999" id="lbl-photo-hint">(optional, Pretty only)</span></label>
+                    <div class="photo-upload-area" id="photo-upload-area">
+                        <div class="photo-preview-wrap" id="photo-preview-wrap" style="display:none">
+                            <img id="photo-preview-img" src="" alt="Photo">
+                            <button class="photo-remove-btn" onclick="removePhoto()" title="Remove photo">&times;</button>
+                        </div>
+                        <label class="photo-upload-btn" id="photo-upload-label">
+                            <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M14 11v3H2v-3H0v3c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-3h-2zM3 5l1.4 1.4L7 3.8V12h2V3.8l2.6 2.6L13 5 8 0 3 5z" fill="currentColor"/></svg>
+                            <span id="lbl-photo-upload">Choose photo</span>
+                            <input type="file" accept="image/*" onchange="handlePhotoUpload(this)" style="display:none">
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label id="lbl-fullname">Full name</label>
+                    <input type="text" id="personal-name" onchange="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label id="lbl-jobtitle">Job title</label>
+                    <input type="text" id="personal-title" onchange="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label id="lbl-contacts">Contact details</label>
+                    <div id="contacts-list"></div>
+                    <button class="btn-add-cert-item" onclick="addContact()" id="btn-add-contact">+ Add contact field</button>
+                </div>
+            </div>
+            <div class="tab-content" id="tab-summary">
+                <div class="form-group">
+                    <label id="lbl-summary">Professional summary</label>
+                    <textarea id="summary-text" rows="10" onchange="updatePreview()"></textarea>
+                </div>
+            </div>
+            <div class="tab-content" id="tab-experience">
+                <div class="exp-toolbar">
+                    <button class="btn btn-sort" onclick="sortGroupsByDate()">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 1v12l-3-3h2V1h2zm5 0h8v2H8V1zm0 4h6v2H8V5zm0 4h4v2H8V9z" fill="currentColor"/></svg>
+                        <span id="btn-sort-date-text">Sort by date</span>
+                    </button>
+                </div>
+                <div id="employer-groups-list"></div>
+                <button class="btn btn-add" onclick="addEmployerGroup()" id="btn-add-employer">+ Add employer</button>
+            </div>
+            <div class="tab-content" id="tab-education">
+                <div id="education-list"></div>
+                <button class="btn btn-add" onclick="addEducation()" id="btn-add-education">+ Add education</button>
+            </div>
+            <div class="tab-content" id="tab-languages">
+                <div id="languages-list"></div>
+                <button class="btn btn-add" onclick="addLanguage()" id="btn-add-language">+ Add language</button>
+            </div>
+            <div class="tab-content" id="tab-skills">
+                <div id="skills-list"></div>
+                <button class="btn btn-add" onclick="addSkillCategory()" id="btn-add-category">+ Add category</button>
+            </div>
+            <div class="tab-content" id="tab-projects">
+                <div id="projects-list"></div>
+                <button class="btn btn-add" onclick="addProject()" id="btn-add-project">+ Add project</button>
+            </div>
+            <div class="tab-content" id="tab-courses">
+                <div id="courses-list"></div>
+                <button class="btn btn-add" onclick="addCourse()" id="btn-add-course">+ Add course</button>
+            </div>
+            <div class="tab-content" id="tab-certifications">
+                <div id="certifications-list"></div>
+                <button class="btn btn-add" onclick="addCertGroup()" id="btn-add-cert-group">+ Add certification group</button>
+            </div>
+
+        </div>
+        <div class="panel-resize-handle" id="panel-resize-handle"></div>
+        <button class="preview-toggle-btn" id="preview-toggle-btn" onclick="togglePreview()" title="Hide/show preview">
+            <svg id="preview-toggle-icon" width="14" height="14" viewBox="0 0 12 12" fill="none"><path d="M4 1l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="preview-panel" id="preview-panel">
+            <div class="preview-toolbar">
+                <div class="preview-mode-toggle">
+                    <button class="pmt-btn active" data-mode="pretty" onclick="setPreviewMode('pretty', this)">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 2h5v5H2V2zm7 0h5v5H9V2zM2 9h5v5H2V9zm7 3.5a2.5 2.5 0 105 0 2.5 2.5 0 00-5 0z" fill="currentColor"/></svg>
+                        <span id="pmt-pretty-text">Visual</span>
+                    </button>
+                    <button class="pmt-btn" data-mode="ats" onclick="setPreviewMode('ats', this)">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 3h12v1H2V3zm0 3h10v1H2V6zm0 3h12v1H2V9zm0 3h8v1H2v-1z" fill="currentColor"/></svg>
+                        <span id="pmt-ats-text">ATS</span>
+                    </button>
+                </div>
+            </div>
+            <div class="preview-scroll" id="preview-scroll">
+                <div class="preview-pages-container" id="cv-pages"></div>
+                <div class="preview-measure" id="cv-measure"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/data.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/preview.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
