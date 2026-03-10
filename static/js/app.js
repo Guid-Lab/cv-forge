@@ -559,7 +559,7 @@ function createPositionHtml(pos, gi, pi) {
             </div>
         </div>
         <div class="form-row">
-            <div class="form-group"><label>${_ui('companyName')}</label><input type="text" class="pos-display-company" value="${esc(pos.display_company)}" onchange="updatePreview()"></div>
+            <div class="form-group"><label>${_ui('companyName')}</label><input type="text" class="pos-display-company" value="${esc(pos.display_company || g.group_name || '')}" onchange="updatePreview()"></div>
         </div>
         <div class="form-group"><label>${_ui('position')}</label><input type="text" class="pos-role" value="${esc(pos.role)}" onchange="updatePreview()"></div>
         <div class="form-row">
