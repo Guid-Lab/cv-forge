@@ -3,6 +3,8 @@ name: Publish and Deploy
 on:
   push:
     branches: [main]
+  release:
+    types: [published]
 
 jobs:
   push:
@@ -15,12 +17,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: guidlab/cv-forge
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' }}
+
       - uses: docker/build-push-action@v6
         with:
           push: true
-          tags: |
-            guidlab/cv-forge:latest
-            guidlab/cv-forge:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
 
       - uses: superfly/flyctl-actions/setup-flyctl@master
 

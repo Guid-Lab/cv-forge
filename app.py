@@ -1,5 +1,7 @@
 """Flask application for CV Manager."""
 
+__version__ = "1.1.0"
+
 import ipaddress
 import logging
 import os
