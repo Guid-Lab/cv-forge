@@ -32,8 +32,11 @@ body {
     position: sticky; top: 0; z-index: 100;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
+.top-bar-left { display: flex; align-items: center; gap: 10px; }
 .top-bar h1 { font-size: 18px; font-weight: 700; }
-.top-bar .subtitle { font-size: 11px; opacity: 0.6; margin-left: 12px; }
+.top-bar h1 .by-guidlab { font-size: 11px; font-weight: 400; opacity: 0.5; }
+.top-bar .github-link { color: white; opacity: 0.6; display: flex; align-items: center; transition: opacity 0.2s; }
+.top-bar .github-link:hover { opacity: 1; }
 .top-bar-right { display: flex; gap: 8px; }
 
 .btn {
