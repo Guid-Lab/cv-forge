@@ -108,7 +108,7 @@ def set_security_headers(response):
 @app.route('/')
 @limiter.exempt
 def index():
-    return render_template('index.html')
+    return render_template('index.html', version=__version__)
 
 @app.route('/api/fetch-logo', methods=['POST'])
 @limiter.limit("20 per minute")
