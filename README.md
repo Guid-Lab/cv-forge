@@ -122,12 +122,7 @@ Paste a company, university, or certification issuer URL and CV Forge will autom
 CV Forge can be used as an AI tool via [MCP (Model Context Protocol)](https://github.com/Guid-Lab/cv-forge-mcp). Describe your experience in a conversation with Claude or another AI assistant, and it will generate a complete CV for you — PDF, DOCX, and a link to the visual editor.
 
 ```bash
-# Install MCP server
-git clone https://github.com/Guid-Lab/cv-forge-mcp.git
-cd cv-forge-mcp && pip install -r requirements.txt
-
-# Add to Claude Code
-claude mcp add cv-forge python /path/to/cv-forge-mcp/mcp_server.py
+claude mcp add cv-forge -- uvx cv-forge-mcp
 ```
 
 The MCP server automatically manages the Docker container — no manual setup needed.
