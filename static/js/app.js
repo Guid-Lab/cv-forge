@@ -658,7 +658,7 @@ function createEmployerGroupCard(group, gi) {
 
     let positionsHtml = '';
     (group.positions || []).forEach((pos, pi) => {
-        positionsHtml += createPositionHtml(pos, gi, pi);
+        positionsHtml += createPositionHtml(pos, gi, pi, group);
     });
 
     const logoPreview = group.logo
@@ -687,7 +687,7 @@ function createEmployerGroupCard(group, gi) {
     return card;
 }
 
-function createPositionHtml(pos, gi, pi) {
+function createPositionHtml(pos, gi, pi, group) {
     const fmt = pos.desc_format || 'bullets';
     const isBullets = fmt === 'bullets';
 
@@ -723,7 +723,7 @@ function createPositionHtml(pos, gi, pi) {
             </div>
         </div>
         <div class="form-row">
-            <div class="form-group"><label>${_ui('companyName')}</label><input type="text" class="pos-display-company" value="${esc(pos.display_company || g.group_name || '')}" onchange="updatePreview()"></div>
+            <div class="form-group"><label>${_ui('companyName')}</label><input type="text" class="pos-display-company" value="${esc(pos.display_company || group?.group_name || '')}" onchange="updatePreview()"></div>
         </div>
         <div class="form-group"><label>${_ui('position')}</label><input type="text" class="pos-role" value="${esc(pos.role)}" onchange="updatePreview()"></div>
         <div class="form-row">
