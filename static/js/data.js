@@ -223,11 +223,11 @@ const PROFICIENCY_LEVELS_I18N = {
         elementary: 'Elementary proficiency',
     },
     pl: {
-        native: 'Ojczysty lub dwujęzyczny',
+        native: 'Język ojczysty lub biegłość dwujęzyczna',
         full_professional: 'Pełna biegłość zawodowa',
-        professional_working: 'Profesjonalna znajomość robocza',
-        limited_working: 'Ograniczona znajomość robocza',
-        elementary: 'Znajomość podstawowa',
+        professional_working: 'Biegłość na poziomie zaawansowanym',
+        limited_working: 'Biegłość na poziomie średniozaawansowanym',
+        elementary: 'Biegłość podstawowa',
     },
     de: {
         native: 'Muttersprache oder zweisprachig',

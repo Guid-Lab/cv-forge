@@ -555,16 +555,22 @@ function collectData() {
             const custom = card.querySelector('.lang-name-custom');
             langName = custom ? custom.value : '';
         }
-        let level = card.querySelector('.lang-level').value;
-        if (level === '_custom') {
+        const levelSelectVal = card.querySelector('.lang-level').value;
+        let level;
+        let customLevel = false;
+        if (levelSelectVal === '_custom') {
             const custom = card.querySelector('.lang-level-custom');
             level = custom ? custom.value : '';
+            customLevel = true;
+        } else {
+            level = levelSelectVal;
         }
         const langObj = {
             language: langName,
             level: level,
             flag: getLangFlag(langName),
         };
+        if (customLevel) langObj._custom_level = true;
         if (oldLangs[i] && oldLangs[i].custom_flag) langObj.custom_flag = oldLangs[i].custom_flag;
         cvData.languages.push(langObj);
     });
@@ -899,6 +905,7 @@ function renderLanguagesList() {
         const flagPreview = (lang.flag && FLAGS[lang.flag]) ? FLAGS[lang.flag] : '';
 
         const isCustomLang = LANGUAGES_DB.every(l => l.name !== lang.language);
+        const isCustomLevel = !!lang._custom_level || (!!lang.level && levels.every(lv => lv.key !== lang.level));
         const hasBuiltinFlag = lang.flag && FLAGS[lang.flag];
         const customFlagUrl = lang.custom_flag || '';
 
@@ -928,8 +935,8 @@ function renderLanguagesList() {
                     <select class="lang-name" onchange="onLangChange(${i}, this)">${langOpts}<option value="_custom" ${isCustomLang?'selected':''}>Other...</option></select>
                     ${isCustomLang?`<input type="text" class="lang-name-custom" value="${esc(lang.language)}" placeholder="${_ui('typeName')}" style="margin-top:4px" onchange="updateCardTitle(this);updatePreview()">`:''}</div>
                 <div class="form-group"><label>Level</label>
-                    <select class="lang-level" onchange="updatePreview()">${levelOpts}<option value="_custom" ${lang.level && levels.every(lv=>lv.key!==lang.level)?'selected':''}>Other...</option></select>
-                    ${lang.level && levels.every(lv=>lv.key!==lang.level)?`<input type="text" class="lang-level-custom" value="${esc(lang.level)}" placeholder="${_ui('typeLevel')}" style="margin-top:4px" onchange="updatePreview()">`:''}</div>
+                    <select class="lang-level" onchange="onLangLevelChange(${i}, this)">${levelOpts}<option value="_custom" ${isCustomLevel?'selected':''}>Other...</option></select>
+                    ${isCustomLevel?`<input type="text" class="lang-level-custom" value="${esc(lang.level)}" placeholder="${_ui('typeLevel')}" style="margin-top:4px" onchange="updatePreview()">`:''}</div>
                 ${flagUploadHtml}
             </div>`;
         c.appendChild(card);
@@ -946,6 +953,19 @@ function onLangChange(i, sel) {
     } else {
         cvData.languages[i].language = langName;
         cvData.languages[i].flag = getLangFlag(langName);
+    }
+    renderLanguagesList();
+    updatePreview();
+}
+
+function onLangLevelChange(i, sel) {
+    collectData();
+    if (sel.value === '_custom') {
+        cvData.languages[i].level = '';
+        cvData.languages[i]._custom_level = true;
+    } else {
+        cvData.languages[i].level = sel.value;
+        delete cvData.languages[i]._custom_level;
     }
     renderLanguagesList();
     updatePreview();
