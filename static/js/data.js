@@ -214,6 +214,98 @@ const LANGUAGES_DB = [
     { name: 'Hebrew', flag: 'il' },
 ];
 
+// Canonical (English) language names → localized display names per CV language.
+// Data stays stored in English; translation happens only at render time.
+const LANGUAGE_NAMES_I18N = {
+    pl: {
+        'Polish': 'Polski', 'English': 'Angielski', 'German': 'Niemiecki', 'French': 'Francuski',
+        'Spanish': 'Hiszpański', 'Italian': 'Włoski', 'Portuguese': 'Portugalski', 'Dutch': 'Niderlandzki',
+        'Ukrainian': 'Ukraiński', 'Czech': 'Czeski', 'Russian': 'Rosyjski', 'Japanese': 'Japoński',
+        'Chinese': 'Chiński', 'Korean': 'Koreański', 'Arabic': 'Arabski', 'Hindi': 'Hindi',
+        'Turkish': 'Turecki', 'Swedish': 'Szwedzki', 'Norwegian': 'Norweski', 'Danish': 'Duński',
+        'Finnish': 'Fiński', 'Hungarian': 'Węgierski', 'Romanian': 'Rumuński', 'Greek': 'Grecki',
+        'Hebrew': 'Hebrajski',
+    },
+    de: {
+        'Polish': 'Polnisch', 'English': 'Englisch', 'German': 'Deutsch', 'French': 'Französisch',
+        'Spanish': 'Spanisch', 'Italian': 'Italienisch', 'Portuguese': 'Portugiesisch', 'Dutch': 'Niederländisch',
+        'Ukrainian': 'Ukrainisch', 'Czech': 'Tschechisch', 'Russian': 'Russisch', 'Japanese': 'Japanisch',
+        'Chinese': 'Chinesisch', 'Korean': 'Koreanisch', 'Arabic': 'Arabisch', 'Hindi': 'Hindi',
+        'Turkish': 'Türkisch', 'Swedish': 'Schwedisch', 'Norwegian': 'Norwegisch', 'Danish': 'Dänisch',
+        'Finnish': 'Finnisch', 'Hungarian': 'Ungarisch', 'Romanian': 'Rumänisch', 'Greek': 'Griechisch',
+        'Hebrew': 'Hebräisch',
+    },
+    fr: {
+        'Polish': 'Polonais', 'English': 'Anglais', 'German': 'Allemand', 'French': 'Français',
+        'Spanish': 'Espagnol', 'Italian': 'Italien', 'Portuguese': 'Portugais', 'Dutch': 'Néerlandais',
+        'Ukrainian': 'Ukrainien', 'Czech': 'Tchèque', 'Russian': 'Russe', 'Japanese': 'Japonais',
+        'Chinese': 'Chinois', 'Korean': 'Coréen', 'Arabic': 'Arabe', 'Hindi': 'Hindi',
+        'Turkish': 'Turc', 'Swedish': 'Suédois', 'Norwegian': 'Norvégien', 'Danish': 'Danois',
+        'Finnish': 'Finnois', 'Hungarian': 'Hongrois', 'Romanian': 'Roumain', 'Greek': 'Grec',
+        'Hebrew': 'Hébreu',
+    },
+    es: {
+        'Polish': 'Polaco', 'English': 'Inglés', 'German': 'Alemán', 'French': 'Francés',
+        'Spanish': 'Español', 'Italian': 'Italiano', 'Portuguese': 'Portugués', 'Dutch': 'Neerlandés',
+        'Ukrainian': 'Ucraniano', 'Czech': 'Checo', 'Russian': 'Ruso', 'Japanese': 'Japonés',
+        'Chinese': 'Chino', 'Korean': 'Coreano', 'Arabic': 'Árabe', 'Hindi': 'Hindi',
+        'Turkish': 'Turco', 'Swedish': 'Sueco', 'Norwegian': 'Noruego', 'Danish': 'Danés',
+        'Finnish': 'Finés', 'Hungarian': 'Húngaro', 'Romanian': 'Rumano', 'Greek': 'Griego',
+        'Hebrew': 'Hebreo',
+    },
+};
+
+function localizeLanguageName(name, cvLang) {
+    if (!name) return '';
+    const tr = LANGUAGE_NAMES_I18N[cvLang];
+    if (!tr) return name;
+    if (tr[name]) return tr[name];
+    const key = Object.keys(tr).find(k => k.toLowerCase() === name.toLowerCase());
+    return key ? tr[key] : name;
+}
+
+// Month abbreviations per CV language; dates are stored as e.g. "Dec 2021".
+const MONTHS_SHORT_I18N = {
+    en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    pl: ['sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'],
+    de: ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],
+    fr: ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'],
+    es: ['ene','feb','mar','abr','may','jun','jul','ago','sept','oct','nov','dic'],
+};
+
+const PRESENT_I18N = { en: 'Present', pl: 'obecnie', de: 'heute', fr: "aujourd'hui", es: 'actualidad' };
+
+const _MONTHS_EN_SHORT = MONTHS_SHORT_I18N.en;
+const _MONTHS_EN_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// Formats a stored date string ("Dec 2021", "December 2021", "2021-12", "2021",
+// "Present") for display in the CV language. Unrecognized values pass through.
+function formatCvDate(dateStr, cvLang) {
+    if (!dateStr) return '';
+    const s = String(dateStr).trim();
+    if (s.toLowerCase() === 'present') return PRESENT_I18N[cvLang] || PRESENT_I18N.en;
+    const months = MONTHS_SHORT_I18N[cvLang] || MONTHS_SHORT_I18N.en;
+    const parts = s.split(' ');
+    if (parts.length === 2 && /^\d{4}$/.test(parts[1])) {
+        let mi = _MONTHS_EN_SHORT.findIndex(m => m.toLowerCase() === parts[0].toLowerCase());
+        if (mi < 0) mi = _MONTHS_EN_FULL.findIndex(m => m.toLowerCase() === parts[0].toLowerCase());
+        if (mi >= 0) return `${months[mi]} ${parts[1]}`;
+    }
+    if (/^\d{4}-\d{2}$/.test(s)) {
+        const [y, m] = s.split('-');
+        const mi = parseInt(m, 10) - 1;
+        if (mi >= 0 && mi < 12) return `${months[mi]} ${y}`;
+    }
+    return s;
+}
+
+function formatCvDateRange(from, to, cvLang) {
+    const f = formatCvDate(from, cvLang);
+    const t = formatCvDate(to, cvLang);
+    if (f && t) return `${f} - ${t}`;
+    return f || t;
+}
+
 const PROFICIENCY_LEVELS_I18N = {
     en: {
         native: 'Native or bilingual proficiency',
