@@ -1,5 +1,10 @@
 const PAGE_W = 794, PAGE_H = 1123, SIDEBAR_W = 240;
 
+// Localize a stored date string to the CV language (not the editor UI language).
+function _cvd(dateStr) {
+    return formatCvDate(dateStr, cvData.cv_language || 'en');
+}
+
 function contactHref(type, value) {
     if (!value) return '';
     if (type === 'email') return `mailto:${value}`;
@@ -75,7 +80,7 @@ function renderPositionContent(pos, hc, groupUrl) {
     const companyName = groupUrl
         ? wrapLink(groupUrl.startsWith('http') ? groupUrl : 'https://'+groupUrl, esc(pos.display_company), hc)
         : esc(pos.display_company);
-    html += `<div class="cv-exp-header"><span class="cv-exp-company" style="color:${hc}">${companyName}</span><span class="cv-exp-date">${esc(pos.date_from)} - ${esc(pos.date_to)}</span></div>`;
+    html += `<div class="cv-exp-header"><span class="cv-exp-company" style="color:${hc}">${companyName}</span><span class="cv-exp-date">${esc(_cvd(pos.date_from))} - ${esc(_cvd(pos.date_to))}</span></div>`;
     html += `<div class="cv-exp-role">${esc(pos.role)}</div>`;
 
     const fmt = pos.desc_format || 'bullets';
@@ -216,7 +221,7 @@ function updatePreview() {
                     : esc(proj.name);
                 let h = `<div class="cv-project-item">`;
                 h += `<div class="cv-exp-header"><span class="cv-exp-company" style="color:${hc}">${projName}</span>`;
-                if (proj.date_from || proj.date_to) h += `<span class="cv-exp-date">${esc(proj.date_from||'')} - ${esc(proj.date_to||'')}</span>`;
+                if (proj.date_from || proj.date_to) h += `<span class="cv-exp-date">${esc(_cvd(proj.date_from||''))} - ${esc(_cvd(proj.date_to||''))}</span>`;
                 h += `</div>`;
                 if (proj.role) h += `<div class="cv-exp-role" style="font-style:italic">${esc(proj.role)}</div>`;
                 if (proj.description) h += `<div class="cv-exp-desc">${esc(proj.description)}</div>`;
@@ -236,8 +241,8 @@ function updatePreview() {
                     : esc(course.name);
                 h += `<div class="cv-course-item">`;
                 h += `<span class="cv-course-name">${courseName}</span>`;
-                if (course.provider) h += `<span class="cv-course-provider"> — ${esc(course.provider)}</span>`;
-                if (course.date) h += `<span class="cv-course-date">${esc(course.date)}</span>`;
+                if (course.provider) h += `<span class="cv-course-provider"> - ${esc(course.provider)}</span>`;
+                if (course.date) h += `<span class="cv-course-date">${esc(_cvd(course.date))}</span>`;
                 h += `</div>`;
             });
             h += '</div>';
@@ -253,8 +258,8 @@ function updatePreview() {
                 const eduName = edu.url
                     ? wrapLink(edu.url.startsWith('http') ? edu.url : 'https://'+edu.url, esc(edu.institution), hc)
                     : esc(edu.institution);
-                const eduDegreeText = [edu.level, edu.degree].filter(x=>x).join(' — ');
-                mainBlocks.push({ html: `<div class="cv-edu-item">${eduLogo}<div class="cv-edu-content"><div class="cv-edu-header"><span class="cv-edu-institution" style="color:${hc}">${eduName}</span><span class="cv-edu-date">${esc(edu.date_from)} - ${esc(edu.date_to)}</span></div><div class="cv-edu-degree">${esc(eduDegreeText)}</div></div></div>` });
+                const eduDegreeText = [edu.level, edu.degree].filter(x=>x).join(' - ');
+                mainBlocks.push({ html: `<div class="cv-edu-item">${eduLogo}<div class="cv-edu-content"><div class="cv-edu-header"><span class="cv-edu-institution" style="color:${hc}">${eduName}</span><span class="cv-edu-date">${esc(_cvd(edu.date_from))} - ${esc(_cvd(edu.date_to))}</span></div><div class="cv-edu-degree">${esc(eduDegreeText)}</div></div></div>` });
             });
         },
         languages: () => {
@@ -271,7 +276,7 @@ function updatePreview() {
                     }
                 }
                 const levelText = getProficiencyLabel(lang.level, cvData.cv_language || 'en');
-                h += `<div class="cv-lang-item">${flagHtml}<span><span class="cv-lang-name">${esc(lang.language)}</span> - ${esc(levelText)}</span></div>`;
+                h += `<div class="cv-lang-item">${flagHtml}<span><span class="cv-lang-name">${esc(localizeLanguageName(lang.language, cvData.cv_language || 'en'))}</span> - ${esc(levelText)}</span></div>`;
             });
             mainBlocks.push({ html: h });
         },
@@ -465,7 +470,7 @@ function renderAtsPreview() {
                         ? `<a href="${esc(companyHref)}" style="color:#1a233b">${esc(company)}</a>`
                         : esc(company);
                     html += `<div class="ats-company">${companyHtml}</div>`;
-                    html += `<div class="ats-role">${esc(pos.role)} &nbsp;|&nbsp; ${esc(pos.date_from)} - ${esc(pos.date_to)}</div>`;
+                    html += `<div class="ats-role">${esc(pos.role)} &nbsp;|&nbsp; ${esc(_cvd(pos.date_from))} - ${esc(_cvd(pos.date_to))}</div>`;
                     if (pos.desc_format === 'paragraph' && pos.rich_description) {
                         html += `<div class="ats-desc">${sanitizeHtml(pos.rich_description)}</div>`;
                     } else {
@@ -504,7 +509,7 @@ function renderAtsPreview() {
                     if (proj.role) html += esc(proj.role);
                     if (proj.date_from || proj.date_to) {
                         if (proj.role) html += ` &nbsp;|&nbsp; `;
-                        html += `${esc(proj.date_from||'')} - ${esc(proj.date_to||'')}`;
+                        html += `${esc(_cvd(proj.date_from||''))} - ${esc(_cvd(proj.date_to||''))}`;
                     }
                     html += `</div>`;
                 }
@@ -522,8 +527,8 @@ function renderAtsPreview() {
                     ? `<a href="${esc(courseHref)}" style="color:#555">${esc(course.name)}</a>`
                     : esc(course.name);
                 let line = `• ${nameHtml}`;
-                if (course.provider) line += ` — ${esc(course.provider)}`;
-                if (course.date) line += ` (${esc(course.date)})`;
+                if (course.provider) line += ` - ${esc(course.provider)}`;
+                if (course.date) line += ` (${esc(_cvd(course.date))})`;
                 html += `<div class="ats-bullet">${line}</div>`;
             });
             html += '<div class="ats-hr"></div>';
@@ -537,8 +542,8 @@ function renderAtsPreview() {
                     ? `<a href="${esc(instHref)}" style="color:#1a233b">${esc(edu.institution)}</a>`
                     : esc(edu.institution);
                 html += `<div class="ats-company">${instHtml}</div>`;
-                const atsEduDegree = [edu.level, edu.degree].filter(x=>x).join(' — ');
-                html += `<div class="ats-role">${esc(atsEduDegree)} &nbsp;|&nbsp; ${esc(edu.date_from)} - ${esc(edu.date_to)}</div>`;
+                const atsEduDegree = [edu.level, edu.degree].filter(x=>x).join(' - ');
+                html += `<div class="ats-role">${esc(atsEduDegree)} &nbsp;|&nbsp; ${esc(_cvd(edu.date_from))} - ${esc(_cvd(edu.date_to))}</div>`;
             });
             html += '<div class="ats-hr"></div>';
         }
@@ -567,7 +572,7 @@ function renderAtsPreview() {
             if (!cvData.languages || !cvData.languages.length) return;
             html += `<div class="ats-section-title">${t('languages')}</div>`;
             cvData.languages.forEach(lang => {
-                html += `<div class="ats-text"><strong>${esc(lang.language)}</strong> - ${esc(getProficiencyLabel(lang.level, cvData.cv_language || 'en'))}</div>`;
+                html += `<div class="ats-text"><strong>${esc(localizeLanguageName(lang.language, cvData.cv_language || 'en'))}</strong> - ${esc(getProficiencyLabel(lang.level, cvData.cv_language || 'en'))}</div>`;
             });
             html += '<div class="ats-hr"></div>';
         }
