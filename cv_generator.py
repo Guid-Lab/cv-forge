@@ -59,6 +59,105 @@ def _t(lang, key):
     translations = DOCX_TRANSLATIONS.get(lang, DOCX_TRANSLATIONS['en'])
     return translations.get(key, DOCX_TRANSLATIONS['en'].get(key, key))
 
+# Month abbreviations per CV language; dates are stored as e.g. "Dec 2021".
+MONTHS_SHORT = {
+    'en': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    'pl': ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'],
+    'de': ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'],
+    'fr': ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'],
+    'es': ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic'],
+}
+
+MONTHS_EN_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                  'August', 'September', 'October', 'November', 'December']
+
+PRESENT_LABELS = {'en': 'Present', 'pl': 'obecnie', 'de': 'heute', 'fr': "aujourd'hui", 'es': 'actualidad'}
+
+# Canonical (English) language names → localized display names per CV language.
+LANGUAGE_NAMES = {
+    'pl': {
+        'Polish': 'Polski', 'English': 'Angielski', 'German': 'Niemiecki', 'French': 'Francuski',
+        'Spanish': 'Hiszpański', 'Italian': 'Włoski', 'Portuguese': 'Portugalski', 'Dutch': 'Niderlandzki',
+        'Ukrainian': 'Ukraiński', 'Czech': 'Czeski', 'Russian': 'Rosyjski', 'Japanese': 'Japoński',
+        'Chinese': 'Chiński', 'Korean': 'Koreański', 'Arabic': 'Arabski', 'Hindi': 'Hindi',
+        'Turkish': 'Turecki', 'Swedish': 'Szwedzki', 'Norwegian': 'Norweski', 'Danish': 'Duński',
+        'Finnish': 'Fiński', 'Hungarian': 'Węgierski', 'Romanian': 'Rumuński', 'Greek': 'Grecki',
+        'Hebrew': 'Hebrajski',
+    },
+    'de': {
+        'Polish': 'Polnisch', 'English': 'Englisch', 'German': 'Deutsch', 'French': 'Französisch',
+        'Spanish': 'Spanisch', 'Italian': 'Italienisch', 'Portuguese': 'Portugiesisch', 'Dutch': 'Niederländisch',
+        'Ukrainian': 'Ukrainisch', 'Czech': 'Tschechisch', 'Russian': 'Russisch', 'Japanese': 'Japanisch',
+        'Chinese': 'Chinesisch', 'Korean': 'Koreanisch', 'Arabic': 'Arabisch', 'Hindi': 'Hindi',
+        'Turkish': 'Türkisch', 'Swedish': 'Schwedisch', 'Norwegian': 'Norwegisch', 'Danish': 'Dänisch',
+        'Finnish': 'Finnisch', 'Hungarian': 'Ungarisch', 'Romanian': 'Rumänisch', 'Greek': 'Griechisch',
+        'Hebrew': 'Hebräisch',
+    },
+    'fr': {
+        'Polish': 'Polonais', 'English': 'Anglais', 'German': 'Allemand', 'French': 'Français',
+        'Spanish': 'Espagnol', 'Italian': 'Italien', 'Portuguese': 'Portugais', 'Dutch': 'Néerlandais',
+        'Ukrainian': 'Ukrainien', 'Czech': 'Tchèque', 'Russian': 'Russe', 'Japanese': 'Japonais',
+        'Chinese': 'Chinois', 'Korean': 'Coréen', 'Arabic': 'Arabe', 'Hindi': 'Hindi',
+        'Turkish': 'Turc', 'Swedish': 'Suédois', 'Norwegian': 'Norvégien', 'Danish': 'Danois',
+        'Finnish': 'Finnois', 'Hungarian': 'Hongrois', 'Romanian': 'Roumain', 'Greek': 'Grec',
+        'Hebrew': 'Hébreu',
+    },
+    'es': {
+        'Polish': 'Polaco', 'English': 'Inglés', 'German': 'Alemán', 'French': 'Francés',
+        'Spanish': 'Español', 'Italian': 'Italiano', 'Portuguese': 'Portugués', 'Dutch': 'Neerlandés',
+        'Ukrainian': 'Ucraniano', 'Czech': 'Checo', 'Russian': 'Ruso', 'Japanese': 'Japonés',
+        'Chinese': 'Chino', 'Korean': 'Coreano', 'Arabic': 'Árabe', 'Hindi': 'Hindi',
+        'Turkish': 'Turco', 'Swedish': 'Sueco', 'Norwegian': 'Noruego', 'Danish': 'Danés',
+        'Finnish': 'Finés', 'Hungarian': 'Húngaro', 'Romanian': 'Rumano', 'Greek': 'Griego',
+        'Hebrew': 'Hebreo',
+    },
+}
+
+def _localize_language(name, lang):
+    """Translate a stored (English) language name for display; unknown names pass through."""
+    if not name:
+        return ''
+    tr = LANGUAGE_NAMES.get(lang)
+    if not tr:
+        return name
+    if name in tr:
+        return tr[name]
+    for key, val in tr.items():
+        if key.lower() == name.lower():
+            return val
+    return name
+
+def _format_date(date_str, lang):
+    """Localize a stored date string ("Dec 2021", "December 2021", "2021-12",
+    "2021", "Present") to the CV language. Unrecognized values pass through."""
+    if not date_str:
+        return ''
+    s = str(date_str).strip()
+    if s.lower() == 'present':
+        return PRESENT_LABELS.get(lang, PRESENT_LABELS['en'])
+    months = MONTHS_SHORT.get(lang, MONTHS_SHORT['en'])
+    parts = s.split(' ')
+    if len(parts) == 2 and parts[1].isdigit() and len(parts[1]) == 4:
+        low = parts[0].lower()
+        for i, m in enumerate(MONTHS_SHORT['en']):
+            if m.lower() == low:
+                return f"{months[i]} {parts[1]}"
+        for i, m in enumerate(MONTHS_EN_FULL):
+            if m.lower() == low:
+                return f"{months[i]} {parts[1]}"
+    if len(s) == 7 and s[4] == '-' and s[:4].isdigit() and s[5:].isdigit():
+        mi = int(s[5:]) - 1
+        if 0 <= mi < 12:
+            return f"{months[mi]} {s[:4]}"
+    return s
+
+def _format_date_range(date_from, date_to, lang):
+    f = _format_date(date_from, lang)
+    t = _format_date(date_to, lang)
+    if f and t:
+        return f"{f} - {t}"
+    return f or t
+
 def _setup_styles(doc):
     """Configure document styles for ATS-friendly output."""
     style = doc.styles['Normal']
@@ -316,7 +415,7 @@ def _add_work_experience(doc, data, lang='en'):
                 run.font.italic = True
                 run.font.size = Pt(10)
                 run.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
-                date_str = f"{pos['date_from']} - {pos['date_to']}"
+                date_str = _format_date_range(pos['date_from'], pos['date_to'], lang)
                 run = p.add_run(f"    |    {date_str}")
                 run.font.size = Pt(9.5)
                 run.font.color.rgb = RGBColor(0x77, 0x77, 0x77)
@@ -361,7 +460,7 @@ def _add_work_experience(doc, data, lang='en'):
             run.font.italic = True
             run.font.size = Pt(10)
             run.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
-            date_str = f"{exp['date_from']} - {exp['date_to']}"
+            date_str = _format_date_range(exp['date_from'], exp['date_to'], lang)
             run = p.add_run(f"    |    {date_str}")
             run.font.size = Pt(9.5)
             run.font.color.rgb = RGBColor(0x77, 0x77, 0x77)
@@ -396,11 +495,11 @@ def _add_education(doc, education, lang='en'):
 
         p = doc.add_paragraph()
         p.paragraph_format.space_before = Pt(0)
-        degree_text = ' — '.join(filter(None, [edu.get('level', ''), edu.get('degree', '')]))
+        degree_text = ' - '.join(filter(None, [edu.get('level', ''), edu.get('degree', '')]))
         run = p.add_run(degree_text)
         run.font.size = Pt(10)
 
-        date_str = f"{edu['date_from']} - {edu['date_to']}"
+        date_str = _format_date_range(edu['date_from'], edu['date_to'], lang)
         run = p.add_run(f"    |    {date_str}")
         run.font.size = Pt(9.5)
         run.font.color.rgb = RGBColor(0x77, 0x77, 0x77)
@@ -463,7 +562,7 @@ def _add_projects(doc, projects, lang='en'):
                 run.font.color.rgb = RGBColor(0x44, 0x44, 0x44)
             if date_from or date_to:
                 sep = '    |    ' if role else ''
-                run = p.add_run(f"{sep}{date_from} - {date_to}")
+                run = p.add_run(f"{sep}{_format_date_range(date_from, date_to, lang)}")
                 run.font.size = Pt(9.5)
                 run.font.color.rgb = RGBColor(0x77, 0x77, 0x77)
 
@@ -506,11 +605,11 @@ def _add_courses(doc, courses, lang='en'):
             run.font.size = Pt(9.5)
             run.font.bold = True
         if provider:
-            run = p.add_run(f' — {provider}')
+            run = p.add_run(f' - {provider}')
             run.font.size = Pt(9.5)
             run.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
         if date:
-            run = p.add_run(f'  ({date})')
+            run = p.add_run(f'  ({_format_date(date, lang)})')
             run.font.size = Pt(9)
             run.font.color.rgb = RGBColor(0x77, 0x77, 0x77)
 
@@ -564,7 +663,7 @@ def _add_languages(doc, languages, lang='en'):
 
     for entry in languages:
         p = doc.add_paragraph()
-        run = p.add_run(f"{entry['language']}")
+        run = p.add_run(f"{_localize_language(entry['language'], lang)}")
         run.font.bold = True
         level = _proficiency_label(entry.get('level', ''), lang)
         run = p.add_run(f" - {level}")
