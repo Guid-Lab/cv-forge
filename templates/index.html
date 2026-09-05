@@ -100,6 +100,8 @@
                 </button>
             </div>
 
+            <div class="panel-tabs-wrap">
+                <button class="tabs-arrow tabs-arrow-left" id="tabs-arrow-left" type="button" aria-label="Scroll tabs left" onclick="scrollTabs(-1)">&#8249;</button>
             <div class="panel-tabs" id="panel-tabs">
                 <button class="tab active" data-tab="settings" onclick="switchTab(this)">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="vertical-align:-2px;margin-right:3px"><path d="M8 10a2 2 0 100-4 2 2 0 000 4zm6.3-1.8l-1-.6a5.2 5.2 0 000-1.2l1-.6c.2-.1.2-.3.1-.5l-1-1.7c-.1-.2-.3-.2-.5-.1l-1 .6a5.4 5.4 0 00-1-.6V2.4c0-.2-.2-.4-.4-.4h-2c-.2 0-.4.2-.4.4v1.1a5 5 0 00-1 .6l-1-.6c-.2-.1-.4 0-.5.1l-1 1.7c-.1.2 0 .4.1.5l1 .6a5.2 5.2 0 000 1.2l-1 .6c-.2.1-.2.3-.1.5l1 1.7c.1.2.3.2.5.1l1-.6c.3.2.7.4 1 .6v1.1c0 .2.2.4.4.4h2c.2 0 .4-.2.4-.4v-1.1a5 5 0 001-.6l1 .6c.2.1.4 0 .5-.1l1-1.7c.1-.2 0-.4-.1-.5z" fill="currentColor"/></svg>
@@ -114,6 +116,8 @@
                 <button class="tab" data-tab="courses" onclick="switchTab(this)"><span id="tab-text-courses">Courses</span></button>
                 <button class="tab" data-tab="languages" onclick="switchTab(this)"><span id="tab-text-languages">Languages</span></button>
                 <button class="tab" data-tab="certifications" onclick="switchTab(this)"><span id="tab-text-certifications">Certifications</span></button>
+            </div>
+                <button class="tabs-arrow tabs-arrow-right" id="tabs-arrow-right" type="button" aria-label="Scroll tabs right" onclick="scrollTabs(1)">&#8250;</button>
             </div>
             <div class="tab-content active" id="tab-settings">
                 <h3 style="margin-bottom:4px;font-size:14px;color:#1a233b" id="settings-cv-lang-title">CV Language</h3>
