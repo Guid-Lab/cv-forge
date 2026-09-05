@@ -274,10 +274,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     let loadedFromToken = false;
     const params = new URLSearchParams(window.location.search);
     const loadToken = params.get('load');
+    let loadTokenFailed = false;
     if (loadToken) {
         window.history.replaceState({}, '', '/');
         try {
             const resp = await fetch('/api/load-data/' + encodeURIComponent(loadToken));
+            if (!resp.ok) loadTokenFailed = true;
             if (resp.ok) {
                 const parsed = await resp.json();
                 if (parsed && typeof parsed === 'object') {
@@ -296,8 +298,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     loadedFromToken = true;
                 }
             }
-        } catch(e) {}
+        } catch(e) { loadTokenFailed = true; }
     }
+    // The link carries a short-lived token that lives in the server's memory.
+    // Failing silently leaves the previous CV on screen and looks like the link
+    // simply did nothing, so say what happened.
+    if (loadTokenFailed) setTimeout(() => showToast(_ui('loadLinkExpired'), true), 400);
     if (!loadedFromToken) {
         const stored = localStorage.getItem('cv_data');
         if (stored) {
@@ -382,6 +388,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let _resizeTimer;
     window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(() => updatePreview(), 250); });
     initTabArrows();
+    updateThemeAtsWarning();
 });
 
 function renderAll() {
@@ -442,10 +449,23 @@ function migrateWorkExperience(workExp) {
     return groupOrder.map(name => groupMap[name]);
 }
 
+// Themes with a side column: their text layer interleaves the two columns, so
+// an ATS reads contact details in the middle of a job entry.
+const TWO_COLUMN_THEMES = ['sidebar', 'elegant'];
+
+function updateThemeAtsWarning() {
+    const el = document.getElementById('theme-ats-warning');
+    if (!el) return;
+    const show = TWO_COLUMN_THEMES.includes(currentTheme);
+    if (show) el.textContent = _ui('twoColumnAtsWarning');
+    el.hidden = !show;
+}
+
 function setTheme(theme, btn) {
     currentTheme = theme; cvData.theme = theme;
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
+    updateThemeAtsWarning();
     updatePreview();
 }
 
@@ -515,7 +535,10 @@ function collectData() {
     document.querySelectorAll('#contacts-list .contact-row').forEach(row => {
         const icon = row.querySelector('.contact-type').value;
         const linkCb = row.querySelector('.contact-link-toggle');
-        contacts.push({ type: icon, icon: icon, label: '', value: row.querySelector('.contact-value').value, link: linkCb ? linkCb.checked : false });
+        const breakCb = row.querySelector('.contact-break-toggle');
+        contacts.push({ type: icon, icon: icon, label: '', value: row.querySelector('.contact-value').value,
+                        link: linkCb ? linkCb.checked : false,
+                        break_after: breakCb ? breakCb.checked : false });
     });
     const photo = cvData.personal && cvData.personal.photo || '';
     cvData.personal = { name: document.getElementById('personal-name').value, title: document.getElementById('personal-title').value, photo, contacts };
@@ -647,7 +670,10 @@ function collectData() {
             const name = row.querySelector('.cert-item-input').value.trim();
             const urlInp = row.querySelector('.cert-item-url');
             const url = urlInp ? urlInp.value.trim() : '';
-            if (name) items.push({ name, url });
+            // An empty expiry means the certificate does not expire.
+            const date_issued = readDateFromSelects(row.querySelector('.cert-issued'));
+            const date_expires = readDateFromSelects(row.querySelector('.cert-expires'));
+            if (name) items.push({ name, url, date_issued, date_expires });
         });
         cvData.certifications.push({
             issuer: card.querySelector('.cert-issuer').value,
@@ -669,11 +695,12 @@ function renderContactsList() {
         d.innerHTML = `<select class="contact-type" onchange="onContactTypeChange(${i},this)">${opts}</select>
             <input type="text" class="contact-value" value="${esc(ct.value)}" placeholder="${_ui('valuePlaceholder')}" onchange="updatePreview()">
             ${linkable ? `<label class="contact-link-wrap" title="Link"><input type="checkbox" class="contact-link-toggle" ${ct.link?'checked':''} onchange="updatePreview()"><span class="link-icon">&#128279;</span></label>` : '<span style="width:28px"></span>'}
+            <label class="contact-break-wrap" title="${esc(_ui('breakAfterHint'))}"><input type="checkbox" class="contact-break-toggle" ${ct.break_after?'checked':''} onchange="updatePreview()"><span class="break-icon">&#8629;</span></label>
             <button class="btn-remove-item" onclick="removeContact(${i})">&times;</button>`;
         c.appendChild(d);
     });
 }
-function addContact() { collectData(); cvData.personal.contacts.push({type:'website',icon:'website',label:'',value:'',link:false}); renderContactsList(); updatePreview(); }
+function addContact() { collectData(); cvData.personal.contacts.push({type:'website',icon:'website',label:'',value:'',link:false,break_after:false}); renderContactsList(); updatePreview(); }
 function removeContact(i) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.personal.contacts.splice(i,1); renderContactsList(); updatePreview(); }); }
 function onContactTypeChange(i, sel) { collectData(); cvData.personal.contacts[i].icon = sel.value; if (sel.value === 'location') cvData.personal.contacts[i].link = false; renderContactsList(); updatePreview(); }
 
@@ -1147,9 +1174,15 @@ function renderCertificationsList() {
         let itemsHtml = (g.items||[]).map((item,ii) => {
             const name = typeof item === 'string' ? item : (item.name || '');
             const url = typeof item === 'string' ? '' : (item.url || '');
+            const issued = typeof item === 'string' ? '' : (item.date_issued || '');
+            const expires = typeof item === 'string' ? '' : (item.date_expires || '');
             return `<div class="cert-item-row">
                 <div class="cert-item"><input type="text" class="cert-item-input" value="${esc(name)}" onchange="updatePreview()"><button class="btn-remove-item" onclick="removeCertItem(${gi},${ii})">&times;</button></div>
                 <input type="text" class="cert-item-url" value="${esc(url)}" placeholder="${_ui('verificationUrl')}" onchange="updatePreview()" style="width:100%;font-size:10px;padding:3px 8px;color:#888;border:1px solid #eee;border-radius:4px;margin-bottom:4px">
+                <div class="form-row cert-item-dates">
+                    <div class="form-group"><label>${_ui('certIssued')}</label>${makeDateFromHtml('cert-issued', issued)}</div>
+                    <div class="form-group"><label>${_ui('certExpires')}</label>${makeDateFromHtml('cert-expires', expires)}</div>
+                </div>
             </div>`;
         }).join('');
 
@@ -1174,10 +1207,10 @@ function renderCertificationsList() {
         c.appendChild(card);
     });
 }
-function addCertGroup() { collectData(); cvData.certifications.push({issuer:'',issuer_url:'',logo:'',items:[{name:'',url:''}]}); renderCertificationsList(); updatePreview(); }
+function addCertGroup() { collectData(); cvData.certifications.push({issuer:'',issuer_url:'',logo:'',items:[{name:'',url:'',date_issued:'',date_expires:''}]}); renderCertificationsList(); updatePreview(); }
 function removeCertGroup(gi) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.certifications.splice(gi,1); renderCertificationsList(); updatePreview(); }); }
 function moveCertGroup(gi,dir) { collectData(); const a=cvData.certifications,ni=gi+dir; if(ni<0||ni>=a.length)return; [a[gi],a[ni]]=[a[ni],a[gi]]; renderCertificationsList(); updatePreview(); }
-function addCertItem(gi) { collectData(); cvData.certifications[gi].items.push({name:'',url:''}); renderCertificationsList(); updatePreview(); }
+function addCertItem(gi) { collectData(); cvData.certifications[gi].items.push({name:'',url:'',date_issued:'',date_expires:''}); renderCertificationsList(); updatePreview(); }
 function removeCertItem(gi,ii) { collectData(); cvData.certifications[gi].items.splice(ii,1); renderCertificationsList(); updatePreview(); }
 
 function showCertLogoMenu(gi, el) {

@@ -11,26 +11,31 @@ const CV_TRANSLATIONS = {
         summary: 'SUMMARY', experience: 'WORK EXPERIENCE', skills: 'SKILLS',
         projects: 'PROJECTS', courses: 'COURSES & TRAINING', education: 'EDUCATION',
         languages: 'LANGUAGES', certifications: 'CERTIFICATIONS',
+        certIssued: 'Issued', certExpires: 'expires',
     },
     pl: {
         summary: 'PODSUMOWANIE', experience: 'DOŚWIADCZENIE ZAWODOWE', skills: 'UMIEJĘTNOŚCI',
         projects: 'PROJEKTY', courses: 'KURSY I SZKOLENIA', education: 'EDUKACJA',
         languages: 'JĘZYKI', certifications: 'CERTYFIKATY',
+        certIssued: 'Wydany', certExpires: 'wygasa',
     },
     de: {
         summary: 'ZUSAMMENFASSUNG', experience: 'BERUFSERFAHRUNG', skills: 'FÄHIGKEITEN',
         projects: 'PROJEKTE', courses: 'KURSE & WEITERBILDUNG', education: 'AUSBILDUNG',
         languages: 'SPRACHEN', certifications: 'ZERTIFIZIERUNGEN',
+        certIssued: 'Ausgestellt', certExpires: 'gültig bis',
     },
     fr: {
         summary: 'RÉSUMÉ', experience: 'EXPÉRIENCE PROFESSIONNELLE', skills: 'COMPÉTENCES',
         projects: 'PROJETS', courses: 'FORMATIONS', education: 'FORMATION',
         languages: 'LANGUES', certifications: 'CERTIFICATIONS',
+        certIssued: 'Délivré', certExpires: 'expire',
     },
     es: {
         summary: 'RESUMEN', experience: 'EXPERIENCIA LABORAL', skills: 'HABILIDADES',
         projects: 'PROYECTOS', courses: 'CURSOS Y FORMACIÓN', education: 'EDUCACIÓN',
         languages: 'IDIOMAS', certifications: 'CERTIFICACIONES',
+        certIssued: 'Emitido', certExpires: 'caduca',
     },
 };
 
