@@ -381,6 +381,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let _resizeTimer;
     window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(() => updatePreview(), 250); });
+    initTabArrows();
 });
 
 function renderAll() {
@@ -460,7 +461,34 @@ function switchTab(btn) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    btn.scrollIntoView({block: 'nearest', inline: 'nearest'});
     try { localStorage.setItem('cv_active_tab', btn.dataset.tab); } catch(e) {}
+}
+
+// The tab strip hides its scrollbar, so the arrows are the only sign that
+// there are more tabs than fit. They show only while there is room to move.
+function scrollTabs(direction) {
+    const tabs = document.getElementById('panel-tabs');
+    if (!tabs) return;
+    tabs.scrollBy({left: direction * Math.max(120, tabs.clientWidth * 0.6), behavior: 'smooth'});
+}
+
+function updateTabArrows() {
+    const tabs = document.getElementById('panel-tabs');
+    const wrap = tabs && tabs.closest('.panel-tabs-wrap');
+    if (!wrap) return;
+    const max = tabs.scrollWidth - tabs.clientWidth;
+    wrap.classList.toggle('can-scroll-left', tabs.scrollLeft > 1);
+    wrap.classList.toggle('can-scroll-right', tabs.scrollLeft < max - 1);
+}
+
+function initTabArrows() {
+    const tabs = document.getElementById('panel-tabs');
+    if (!tabs) return;
+    tabs.addEventListener('scroll', updateTabArrows, {passive: true});
+    window.addEventListener('resize', updateTabArrows);
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateTabArrows).observe(tabs);
+    updateTabArrows();
 }
 
 function populateForm() {
@@ -598,6 +626,7 @@ function collectData() {
             date_from: readDateFromSelects(card.querySelector('.proj-from')),
             date_to: dateTo,
             description: card.querySelector('.proj-desc') ? card.querySelector('.proj-desc').value : '',
+            logo: card.dataset.logo || '',
         });
     });
 
@@ -1032,9 +1061,20 @@ function renderProjectsList() {
     (cvData.projects||[]).forEach((proj, i) => {
         const card = document.createElement('div');
         card.className = 'entry-card';
+        card.dataset.logo = proj.logo || '';
+
+        const logoPreview = proj.logo
+            ? `<img src="${esc(proj.logo)}" class="logo-thumb-sm">`
+            : `<div class="logo-placeholder-sm" style="background:${getColor(proj.name)}">${getInitials(proj.name||'?')}</div>`;
+
         card.innerHTML = `
             <div class="entry-card-header">
-                <span class="entry-card-title">${_ui('tabProjects')} ${i+1}</span>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <div class="cert-logo-area logo-clickable" onclick="showProjectLogoMenu(${i}, this)">
+                        ${logoPreview}
+                    </div>
+                    <span class="entry-card-title">${_ui('tabProjects')} ${i+1}</span>
+                </div>
                 <div class="entry-card-actions">
                     <button class="move-btn" onclick="moveProject(${i},-1)">&#9650;</button>
                     <button class="move-btn" onclick="moveProject(${i},1)">&#9660;</button>
@@ -1052,7 +1092,24 @@ function renderProjectsList() {
         c.appendChild(card);
     });
 }
-function addProject() { collectData(); if(!cvData.projects) cvData.projects=[]; cvData.projects.push({name:'',role:'',url:'',date_from:'',date_to:'',description:''}); renderProjectsList(); updatePreview(); }
+function showProjectLogoMenu(i, el) {
+    collectData();
+    const proj = cvData.projects[i];
+    showLogoMenu(el, {
+        hasLogo: !!proj.logo,
+        hasUrl: !!proj.url,
+        onUpload: async (file) => {
+            const url = await uploadLogoFile(file);
+            if (url) { collectData(); cvData.projects[i].logo = url; renderProjectsList(); updatePreview(); showToast(_ui('toastLogoUploaded')); }
+        },
+        onFetch: async () => {
+            const url = await fetchLogoFromUrl(cvData.projects[i].url);
+            if (url) { collectData(); cvData.projects[i].logo = url; renderProjectsList(); updatePreview(); }
+        },
+        onRemove: () => { collectData(); cvData.projects[i].logo = ''; renderProjectsList(); updatePreview(); showToast(_ui('toastLogoRemoved')); },
+    });
+}
+function addProject() { collectData(); if(!cvData.projects) cvData.projects=[]; cvData.projects.push({name:'',role:'',url:'',date_from:'',date_to:'',description:'',logo:''}); renderProjectsList(); updatePreview(); }
 function removeProject(i) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.projects.splice(i,1); renderProjectsList(); updatePreview(); }); }
 function moveProject(i,dir) { collectData(); const a=cvData.projects,ni=i+dir; if(ni<0||ni>=a.length)return; [a[i],a[ni]]=[a[ni],a[i]]; renderProjectsList(); updatePreview(); }
 
@@ -1682,23 +1739,40 @@ const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 const MONTH_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 function getMonthLabels() { return _ui('monthNames'); }
 
+// Month names in every supported CV language, so a date stored as "kwi 2020"
+// or "Kwiecień 2020" is still recognised and not thrown away on the next save.
+function monthIndexFromName(token) {
+    const key = String(token).trim().replace(/\.$/, '').toLowerCase();
+    if (!key) return -1;
+    const tables = [MONTH_NAMES, MONTH_FULL];
+    if (typeof MONTHS_SHORT_I18N !== 'undefined') tables.push(...Object.values(MONTHS_SHORT_I18N));
+    if (typeof UI !== 'undefined') {
+        Object.values(UI).forEach(v => { if (v && v.monthNames) tables.push(v.monthNames); });
+    }
+    for (const table of tables) {
+        const i = table.findIndex(m => String(m).replace(/\.$/, '').toLowerCase() === key);
+        if (i >= 0) return i;
+    }
+    return -1;
+}
+
+// Returns the month/year the selects should show plus the original string, so
+// callers can fall back to it when the value is not expressible in the selects.
 function parseDateStr(dateStr) {
-    if (!dateStr || dateStr.toLowerCase() === 'present') return {month: -1, year: ''};
-    const parts = dateStr.trim().split(' ');
-    if (parts.length === 2) {
-        const mi = MONTH_NAMES.indexOf(parts[0]);
-        if (mi >= 0) return {month: mi, year: parts[1]};
-        const miFull = MONTH_FULL.indexOf(parts[0]);
-        if (miFull >= 0) return {month: miFull, year: parts[1]};
-        const miLower = MONTH_FULL.findIndex(m => m.toLowerCase() === parts[0].toLowerCase());
-        if (miLower >= 0) return {month: miLower, year: parts[1]};
+    const raw = dateStr ? String(dateStr).trim() : '';
+    if (!raw || isPresent(raw)) return {month: -1, year: '', raw};
+    const parts = raw.split(/\s+/);
+    if (parts.length === 2 && /^\d{4}$/.test(parts[1])) {
+        const mi = monthIndexFromName(parts[0]);
+        if (mi >= 0) return {month: mi, year: parts[1], raw};
     }
-    if (/^\d{4}-\d{2}$/.test(dateStr)) {
-        const [y,m] = dateStr.split('-');
-        return {month: parseInt(m,10)-1, year: y};
+    if (/^\d{4}-\d{2}$/.test(raw)) {
+        const [y,m] = raw.split('-');
+        const mi = parseInt(m,10)-1;
+        if (mi >= 0 && mi < 12) return {month: mi, year: y, raw};
     }
-    if (/^\d{4}$/.test(dateStr.trim())) return {month: -1, year: dateStr.trim()};
-    return {month: -1, year: ''};
+    if (/^\d{4}$/.test(raw)) return {month: -1, year: raw, raw};
+    return {month: -1, year: '', raw};
 }
 
 function monthValueToDate(val) {
@@ -1716,22 +1790,40 @@ function readDateFromSelects(container) {
     const ys = container.querySelector('.date-year-sel');
     if (!ys) return '';
     const y = ys.value;
-    if (!y) return '';
+    // A value the selects cannot represent is kept verbatim instead of being
+    // silently dropped. Touching either select clears the fallback.
+    if (!y) return container.dataset.unparsed || '';
     const m = ms ? ms.value : '';
     if (m === '' || m === '-1') return y;
     return `${MONTH_NAMES[parseInt(m,10)]} ${y}`;
 }
 
 function isPresent(dateStr) {
-    return dateStr && dateStr.toLowerCase() === 'present';
+    if (!dateStr) return false;
+    const v = String(dateStr).trim().toLowerCase();
+    if (v === 'present') return true;
+    if (typeof PRESENT_I18N !== 'undefined'
+        && Object.values(PRESENT_I18N).some(x => String(x).toLowerCase() === v)) return true;
+    if (typeof UI !== 'undefined'
+        && Object.values(UI).some(u => u && u.present && String(u.present).toLowerCase() === v)) return true;
+    return false;
 }
 
 function yearOptions(selectedYear) {
     const now = new Date().getFullYear();
-    let opts = `<option value="">${_ui('yearLabel')}</option>`;
-    for (let y = now + 2; y >= 1970; y--) {
-        opts += `<option value="${y}" ${String(y)===String(selectedYear)?'selected':''}>${y}</option>`;
+    const years = [];
+    for (let y = now + 2; y >= 1970; y--) years.push(y);
+    // A stored year outside the default range must still be selectable,
+    // otherwise the select silently drops it.
+    const sel = parseInt(selectedYear, 10);
+    if (sel && !years.includes(sel)) {
+        years.push(sel);
+        years.sort((a, b) => b - a);
     }
+    let opts = `<option value="">${_ui('yearLabel')}</option>`;
+    years.forEach(y => {
+        opts += `<option value="${y}" ${String(y)===String(selectedYear)?'selected':''}>${y}</option>`;
+    });
     return opts;
 }
 
@@ -1743,11 +1835,19 @@ function monthOptions(selectedMonth) {
     return opts;
 }
 
+function unparsedAttr(d) {
+    return (d.raw && !d.year) ? ` data-unparsed="${esc(d.raw)}"` : '';
+}
+
+// Any interaction with the selects means the user is replacing the value,
+// so the verbatim fallback must go.
+const DATE_SEL_ONCHANGE = "this.closest('.date-selects-wrap').removeAttribute('data-unparsed');updatePreview()";
+
 function makeDateFromHtml(cls, dateStr) {
     const d = parseDateStr(dateStr);
-    return `<div class="date-selects-wrap ${cls}">
-        <select class="date-month-sel" onchange="updatePreview()">${monthOptions(d.month)}</select>
-        <select class="date-year-sel" onchange="updatePreview()">${yearOptions(d.year)}</select>
+    return `<div class="date-selects-wrap ${cls}"${unparsedAttr(d)}>
+        <select class="date-month-sel" onchange="${DATE_SEL_ONCHANGE}">${monthOptions(d.month)}</select>
+        <select class="date-year-sel" onchange="${DATE_SEL_ONCHANGE}">${yearOptions(d.year)}</select>
     </div>`;
 }
 
@@ -1756,9 +1856,9 @@ function makeDateToHtml(cls, dateStr, gi, pi) {
     const d = pres ? {month:-1, year:''} : parseDateStr(dateStr);
     const idSuffix = pi !== undefined ? `${gi}-${pi}` : `${gi}`;
     return `<div class="date-present-wrap">
-        <div class="date-selects-wrap ${cls}" style="flex:1">
-            <select class="date-month-sel" ${pres?'disabled':''} onchange="updatePreview()">${monthOptions(d.month)}</select>
-            <select class="date-year-sel" ${pres?'disabled':''} onchange="updatePreview()">${yearOptions(d.year)}</select>
+        <div class="date-selects-wrap ${cls}" style="flex:1"${unparsedAttr(d)}>
+            <select class="date-month-sel" ${pres?'disabled':''} onchange="${DATE_SEL_ONCHANGE}">${monthOptions(d.month)}</select>
+            <select class="date-year-sel" ${pres?'disabled':''} onchange="${DATE_SEL_ONCHANGE}">${yearOptions(d.year)}</select>
         </div>
         <label><input type="checkbox" class="${cls}-present" ${pres?'checked':''} onchange="togglePresent(this, '${cls}', '${idSuffix}')"> ${_ui('present')}</label>
     </div>`;
