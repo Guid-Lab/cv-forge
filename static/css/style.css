@@ -148,8 +148,17 @@ body {
 .tp-modern { flex-direction: row; background: white; } .tp-modern .tp-strip { width: 3px; background: var(--navy); } .tp-modern .tp-rest { flex: 1; display: flex; flex-direction: column; padding: 4px; gap: 2px; } .tp-modern .tp-name { height: 3px; width: 20px; background: var(--navy); } .tp-modern .tp-lines { height: 3px; width: 16px; background: #eee; }
 .tp-elegant { display: flex; background: white; } .tp-elegant .tp-elside { width: 12px; background: #e8edf2; } .tp-elegant .tp-elmain { flex: 1; background: white; }
 
-.panel-tabs { display: flex; border-bottom: 2px solid var(--border); background: #fafbfc; flex-shrink: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+/* The tab strip scrolls horizontally with its scrollbar hidden, which left no
+   sign that there were more tabs. The arrows appear only when it overflows. */
+.panel-tabs-wrap { position: relative; display: flex; align-items: stretch; border-bottom: 2px solid var(--border); background: #fafbfc; flex-shrink: 0; }
+.panel-tabs { display: flex; flex: 1; min-width: 0; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .panel-tabs::-webkit-scrollbar { display: none; }
+.tabs-arrow { display: none; flex-shrink: 0; width: 26px; border: none; background: #fafbfc; color: var(--text-muted); font-size: 18px; line-height: 1; cursor: pointer; padding: 0; }
+.tabs-arrow:hover { color: var(--accent); background: #f0f2f5; }
+.tabs-arrow-left { box-shadow: 6px 0 6px -6px rgba(0,0,0,0.25); }
+.tabs-arrow-right { box-shadow: -6px 0 6px -6px rgba(0,0,0,0.25); }
+.panel-tabs-wrap.can-scroll-left .tabs-arrow-left,
+.panel-tabs-wrap.can-scroll-right .tabs-arrow-right { display: block; }
 .tab { padding: 12px 14px; border: none; background: none; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: all 0.15s; }
 .tab:hover { color: var(--text); }
 .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
@@ -398,10 +407,27 @@ body {
 .cv-skills-grid { display: flex; flex-direction: column; gap: 8px; }
 .cv-skill-category { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .cv-skill-cat-name { font-weight: 700; font-size: 10px; white-space: nowrap; min-width: 100px; }
-.cv-skill-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-.cv-skill-tag { font-size: 8.5px; padding: 2px 8px; border-radius: 3px; font-weight: 500; white-space: nowrap; }
+.cv-skill-tags { display: block; flex: 1; min-width: 0; }
+.cv-skill-tag { display: inline-block; font-size: 8.5px; padding: 2px 8px; border-radius: 3px; font-weight: 500; white-space: nowrap; margin-bottom: 3px; }
 .cv-skill-modern { border-radius: 0 3px 3px 0; }
-.cv-skill-inline { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; align-items: baseline; }
+.cv-skill-inline { display: block; flex: 1; min-width: 0; }
+
+/* PDF text layer separators.
+   Chromium emits each flex item as its own text run and puts no space glyph
+   between two runs on the same baseline, so a resume parser that ignores
+   horizontal gaps reads "UBS" + "Apr 2020" as "UBSApr". A non-breaking space
+   in ::after puts a real character into the text layer; it sits inside the
+   gap the layout already leaves, so the rendering is unchanged.
+   Skill chips are laid out inline instead of as flex items, which lets the
+   space between them in the markup survive as a real glyph outside the chip
+   background. Covered by tests/test_pdf_text_layer.py. */
+.cv-exp-company::after,
+.cv-edu-institution::after,
+.cv-skill-cat-name::after,
+.cv-course-name::after,
+.cv-course-provider::after,
+.cv-topbar-contact:not(:last-child)::after,
+.cv-min-contact:not(:last-child)::after { content: "\00a0"; }
 
 .cv-project-item { margin-bottom: 8px; }
 
@@ -505,21 +531,27 @@ body {
 .toast.show { opacity: 1; transform: translateY(0); }
 .toast.error { background: var(--danger); }
 
-.ats-preview-page { height: auto !important; min-height: 1123px; }
-.ats-content { padding: 40px 50px; font-family: 'Calibri', 'Segoe UI', sans-serif; }
-.ats-name { font-size: 22px; font-weight: 700; color: #1a233b; margin-bottom: 2px; }
-.ats-title { font-size: 12px; color: #556580; margin-bottom: 6px; }
-.ats-contacts { font-size: 9.5px; color: #556580; margin-bottom: 4px; }
+/* ATS preview.
+   Sizes and spacing are given in the same units cv_generator.py uses for the
+   DOCX (points, centimetres, 0.2in indents) so the preview paginates the way
+   the exported document does. They were previously the same numbers written as
+   px, which rendered everything at 75% and understated the page count.
+   LibreOffice still lays the DOCX out itself, so this is an approximation. */
+.ats-preview-page { height: 1123px; }
+.ats-content { padding: 1.5cm 2cm; font-family: 'Calibri', 'Carlito', 'Segoe UI', sans-serif; font-size: 10pt; line-height: 1.4; }
+.ats-name { font-size: 22pt; font-weight: 700; color: #1a233b; margin-bottom: 0; }
+.ats-title { font-size: 12pt; color: #556580; margin-bottom: 4pt; }
+.ats-contacts { font-size: 9.5pt; color: #556580; margin-bottom: 2pt; }
 .ats-contacts a { color: #556580; text-decoration: underline; }
-.ats-hr { height: 1px; background: #ccc; margin: 10px 0; }
-.ats-section-title { font-size: 13px; font-weight: 700; color: #1a233b; margin-bottom: 6px; margin-top: 4px; }
-.ats-company { font-size: 11px; font-weight: 700; color: #1a233b; margin-top: 8px; }
-.ats-company:first-of-type { margin-top: 0; }
-.ats-role { font-size: 10px; color: #444; font-style: italic; margin-bottom: 2px; }
-.ats-bullet { font-size: 9.5px; color: #555; line-height: 1.55; padding-left: 12px; }
-.ats-text { font-size: 9.5px; color: #444; line-height: 1.6; }
-.ats-desc { font-size: 9.5px; color: #555; line-height: 1.55; padding-left: 12px; }
-.ats-skill-line { font-size: 10px; color: #444; margin-bottom: 3px; line-height: 1.5; }
+.ats-hr { height: 1px; background: #ccc; margin: 2pt 0; }
+.ats-section-title { font-size: 13pt; font-weight: 700; color: #1a233b; margin-top: 16pt; margin-bottom: 6pt; }
+.ats-company { font-size: 11pt; font-weight: 700; color: #1a233b; margin-top: 8pt; margin-bottom: 1pt; }
+.ats-company:first-of-type { margin-top: 2pt; }
+.ats-role { font-size: 10pt; color: #444; font-style: italic; margin-bottom: 2pt; }
+.ats-bullet { font-size: 9.5pt; color: #555; padding-left: 0.2in; margin-bottom: 1pt; }
+.ats-text { font-size: 10pt; color: #444; margin-bottom: 4pt; }
+.ats-desc { font-size: 9.5pt; color: #555; padding-left: 0.2in; margin-bottom: 2pt; }
+.ats-skill-line { font-size: 9.5pt; color: #444; margin-bottom: 2pt; }
 
 /* --- Tablet (<1200px) --- */
 @media (max-width: 1200px) {

@@ -1,4 +1,7 @@
 const PAGE_W = 794, PAGE_H = 1123, SIDEBAR_W = 240;
+// Mirrors the padding of .ats-content, which mirrors the DOCX page margins.
+const CM_TO_PX = 96 / 2.54;
+const ATS_SIDE_PADDING = 2 * CM_TO_PX, ATS_VERTICAL_PADDING = 1.5 * CM_TO_PX;
 
 // Localize a stored date string to the CV language (not the editor UI language).
 function _cvd(dateStr) {
@@ -190,21 +193,17 @@ function updatePreview() {
                 if (currentTheme === 'executive') {
                     h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-inline" style="color:#555;font-size:9px">${items.map(i=>esc(i)).join(', ')}</div></div>`;
                 } else if (currentTheme === 'modern') {
-                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-tags">`;
-                    items.forEach(item => {
-                        h += `<span class="cv-skill-tag cv-skill-modern" style="border-left:2px solid ${scheme.primary};background:#f8f9fb;color:#333">${esc(item)}</span>`;
-                    });
-                    h += '</div></div>';
+                    const tags = items.map(item =>
+                        `<span class="cv-skill-tag cv-skill-modern" style="border-left:2px solid ${scheme.primary};background:#f8f9fb;color:#333">${esc(item)}</span>`);
+                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-tags">${tags.join(' ')}</div></div>`;
                 } else if (currentTheme === 'elegant') {
                     h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-inline" style="color:#555;font-size:9px">${items.map(i=>`<span style="background:${scheme.primary}08;padding:1px 6px;border-radius:2px">${esc(i)}</span>`).join(' ')}</div></div>`;
                 } else if (currentTheme === 'minimal') {
                     h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-inline" style="color:#555;font-size:9px">${items.map(i=>esc(i)).join(' · ')}</div></div>`;
                 } else {
-                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-tags">`;
-                    items.forEach(item => {
-                        h += `<span class="cv-skill-tag" style="background:${scheme.primary}0d;color:${scheme.primary};border:1px solid ${scheme.primary}25">${esc(item)}</span>`;
-                    });
-                    h += '</div></div>';
+                    const tags = items.map(item =>
+                        `<span class="cv-skill-tag" style="background:${scheme.primary}0d;color:${scheme.primary};border:1px solid ${scheme.primary}25">${esc(item)}</span>`);
+                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-tags">${tags.join(' ')}</div></div>`;
                 }
             });
             h += '</div>';
@@ -219,13 +218,16 @@ function updatePreview() {
                 const projName = proj.url
                     ? wrapLink(proj.url.startsWith('http') ? proj.url : 'https://'+proj.url, esc(proj.name), hc)
                     : esc(proj.name);
-                let h = `<div class="cv-project-item">`;
-                h += `<div class="cv-exp-header"><span class="cv-exp-company" style="color:${hc}">${projName}</span>`;
-                if (proj.date_from || proj.date_to) h += `<span class="cv-exp-date">${esc(_cvd(proj.date_from||''))} - ${esc(_cvd(proj.date_to||''))}</span>`;
-                h += `</div>`;
-                if (proj.role) h += `<div class="cv-exp-role" style="font-style:italic">${esc(proj.role)}</div>`;
-                if (proj.description) h += `<div class="cv-exp-desc">${esc(proj.description)}</div>`;
-                h += `</div>`;
+                let inner = `<div class="cv-exp-header"><span class="cv-exp-company" style="color:${hc}">${projName}</span>`;
+                if (proj.date_from || proj.date_to) inner += `<span class="cv-exp-date">${esc(_cvd(proj.date_from||''))} - ${esc(_cvd(proj.date_to||''))}</span>`;
+                inner += `</div>`;
+                if (proj.role) inner += `<div class="cv-exp-role" style="font-style:italic">${esc(proj.role)}</div>`;
+                if (proj.description) inner += `<div class="cv-exp-desc">${esc(proj.description)}</div>`;
+                // A project picture is optional per project, so the plain block
+                // layout stays in use when there is none.
+                const h = proj.logo
+                    ? `<div class="cv-exp-item"><div style="flex-shrink:0;margin-top:1px">${renderLogoOrInitials(proj.name, proj.logo, 28)}</div><div class="cv-exp-content">${inner}</div></div>`
+                    : `<div class="cv-project-item">${inner}</div>`;
                 mainBlocks.push({ html: h });
             });
         },
@@ -434,10 +436,15 @@ function renderAtsPreview() {
     if (typeof validateDateRanges === 'function') validateDateRanges();
     const pagesContainer = document.getElementById('cv-pages');
     const p = cvData.personal;
-    let html = '<div class="preview-page ats-preview-page"><div class="ats-content">';
 
-    html += `<div class="ats-name">${esc(p.name)}</div>`;
-    html += `<div class="ats-title">${esc(p.title)}</div>`;
+    // Collected as separate blocks rather than one string, so the preview can
+    // be split across A4 pages the way the visual preview is.
+    const blocks = [];
+    const push = (markup, opts) => blocks.push(Object.assign({ html: markup }, opts));
+    const rule = () => blocks.push({ html: '<div class="ats-hr"></div>', isRule: true });
+
+    push(`<div class="ats-name">${esc(p.name)}</div>`);
+    push(`<div class="ats-title">${esc(p.title)}</div>`);
 
     const contactVals = (p.contacts||[]).filter(c => c.value).map(c => {
         if (c.link) {
@@ -446,22 +453,22 @@ function renderAtsPreview() {
         }
         return esc(c.value);
     });
-    if (contactVals.length) html += `<div class="ats-contacts">${contactVals.join(' | ')}</div>`;
-    html += '<div class="ats-hr"></div>';
+    if (contactVals.length) push(`<div class="ats-contacts">${contactVals.join(' | ')}</div>`);
+    rule();
 
     const sectionOrder = cvData.section_order || ['summary','experience','skills','projects','education','courses','certifications','languages'];
     sectionOrder.forEach(sec => {
         if (typeof sec === 'object') return;
         if (!isSectionEnabled(sec)) return;
         if (sec === 'summary' && cvData.summary) {
-            html += `<div class="ats-section-title">${t('summary')}</div>`;
-            html += `<div class="ats-text">${esc(cvData.summary)}</div>`;
-            html += '<div class="ats-hr"></div>';
+            push(`<div class="ats-section-title">${t('summary')}</div>`, { keepWithNext: true });
+            push(`<div class="ats-text">${esc(cvData.summary)}</div>`);
+            rule();
         }
         if (sec === 'experience') {
             const groups = (cvData.employer_groups||[]).filter(g => !g.hidden);
             if (!groups.length) return;
-            html += `<div class="ats-section-title">${t('experience')}</div>`;
+            push(`<div class="ats-section-title">${t('experience')}</div>`, { keepWithNext: true });
             groups.forEach(group => {
                 (group.positions||[]).forEach(pos => {
                     const company = pos.display_company || group.group_name;
@@ -469,58 +476,61 @@ function renderAtsPreview() {
                     const companyHtml = companyHref
                         ? `<a href="${esc(companyHref)}" style="color:#1a233b">${esc(company)}</a>`
                         : esc(company);
-                    html += `<div class="ats-company">${companyHtml}</div>`;
-                    html += `<div class="ats-role">${esc(pos.role)} &nbsp;|&nbsp; ${esc(_cvd(pos.date_from))} - ${esc(_cvd(pos.date_to))}</div>`;
+                    // Company and role stay together; the bullets may break.
+                    push(`<div class="ats-company">${companyHtml}</div>`
+                        + `<div class="ats-role">${esc(pos.role)} &nbsp;|&nbsp; ${esc(_cvd(pos.date_from))} - ${esc(_cvd(pos.date_to))}</div>`,
+                        { keepWithNext: true });
                     if (pos.desc_format === 'paragraph' && pos.rich_description) {
-                        html += `<div class="ats-desc">${sanitizeHtml(pos.rich_description)}</div>`;
+                        push(`<div class="ats-desc">${sanitizeHtml(pos.rich_description)}</div>`);
                     } else {
                         (pos.bullets||[]).forEach(b => {
-                            html += `<div class="ats-bullet">• ${esc(b)}</div>`;
+                            push(`<div class="ats-bullet">• ${esc(b)}</div>`);
                         });
                     }
                 });
             });
-            html += '<div class="ats-hr"></div>';
+            rule();
         }
         if (sec === 'skills') {
             const skills = (cvData.skills||[]).filter(c => c.category || (c.items&&c.items.length));
             if (!skills.length) return;
-            html += `<div class="ats-section-title">${t('skills')}</div>`;
+            push(`<div class="ats-section-title">${t('skills')}</div>`, { keepWithNext: true });
             skills.forEach(cat => {
                 const items = (cat.items||[]).filter(x=>x);
                 if (cat.category || items.length) {
-                    html += `<div class="ats-skill-line"><strong>${esc(cat.category)}:</strong> ${items.map(i=>esc(i)).join(', ')}</div>`;
+                    push(`<div class="ats-skill-line"><strong>${esc(cat.category)}:</strong> ${items.map(i=>esc(i)).join(', ')}</div>`);
                 }
             });
-            html += '<div class="ats-hr"></div>';
+            rule();
         }
         if (sec === 'projects') {
             const projs = (cvData.projects||[]).filter(p => p.name);
             if (!projs.length) return;
-            html += `<div class="ats-section-title">${t('projects')}</div>`;
+            push(`<div class="ats-section-title">${t('projects')}</div>`, { keepWithNext: true });
             projs.forEach(proj => {
                 const projHref = proj.url ? (proj.url.startsWith('http')?proj.url:'https://'+proj.url) : '';
                 const projHtml = projHref
                     ? `<a href="${esc(projHref)}" style="color:#1a233b">${esc(proj.name)}</a>`
                     : esc(proj.name);
-                html += `<div class="ats-company">${projHtml}</div>`;
+                let head = `<div class="ats-company">${projHtml}</div>`;
                 if (proj.role || proj.date_from || proj.date_to) {
-                    html += `<div class="ats-role">`;
-                    if (proj.role) html += esc(proj.role);
+                    head += `<div class="ats-role">`;
+                    if (proj.role) head += esc(proj.role);
                     if (proj.date_from || proj.date_to) {
-                        if (proj.role) html += ` &nbsp;|&nbsp; `;
-                        html += `${esc(_cvd(proj.date_from||''))} - ${esc(_cvd(proj.date_to||''))}`;
+                        if (proj.role) head += ` &nbsp;|&nbsp; `;
+                        head += `${esc(_cvd(proj.date_from||''))} - ${esc(_cvd(proj.date_to||''))}`;
                     }
-                    html += `</div>`;
+                    head += `</div>`;
                 }
-                if (proj.description) html += `<div class="ats-text" style="padding-left:12px">${esc(proj.description)}</div>`;
+                push(head, { keepWithNext: !!proj.description });
+                if (proj.description) push(`<div class="ats-text" style="padding-left:12px">${esc(proj.description)}</div>`);
             });
-            html += '<div class="ats-hr"></div>';
+            rule();
         }
         if (sec === 'courses') {
             const crs = (cvData.courses||[]).filter(c => c.name);
             if (!crs.length) return;
-            html += `<div class="ats-section-title">${t('courses')}</div>`;
+            push(`<div class="ats-section-title">${t('courses')}</div>`, { keepWithNext: true });
             crs.forEach(course => {
                 const courseHref = course.url ? (course.url.startsWith('http')?course.url:'https://'+course.url) : '';
                 const nameHtml = courseHref
@@ -529,33 +539,33 @@ function renderAtsPreview() {
                 let line = `• ${nameHtml}`;
                 if (course.provider) line += ` - ${esc(course.provider)}`;
                 if (course.date) line += ` (${esc(_cvd(course.date))})`;
-                html += `<div class="ats-bullet">${line}</div>`;
+                push(`<div class="ats-bullet">${line}</div>`);
             });
-            html += '<div class="ats-hr"></div>';
+            rule();
         }
         if (sec === 'education') {
             if (!cvData.education || !cvData.education.length) return;
-            html += `<div class="ats-section-title">${t('education')}</div>`;
+            push(`<div class="ats-section-title">${t('education')}</div>`, { keepWithNext: true });
             cvData.education.forEach(edu => {
                 const instHref = edu.url ? (edu.url.startsWith('http')?edu.url:'https://'+edu.url) : '';
                 const instHtml = instHref
                     ? `<a href="${esc(instHref)}" style="color:#1a233b">${esc(edu.institution)}</a>`
                     : esc(edu.institution);
-                html += `<div class="ats-company">${instHtml}</div>`;
                 const atsEduDegree = [edu.level, edu.degree].filter(x=>x).join(' - ');
-                html += `<div class="ats-role">${esc(atsEduDegree)} &nbsp;|&nbsp; ${esc(_cvd(edu.date_from))} - ${esc(_cvd(edu.date_to))}</div>`;
+                push(`<div class="ats-company">${instHtml}</div>`
+                    + `<div class="ats-role">${esc(atsEduDegree)} &nbsp;|&nbsp; ${esc(_cvd(edu.date_from))} - ${esc(_cvd(edu.date_to))}</div>`);
             });
-            html += '<div class="ats-hr"></div>';
+            rule();
         }
         if (sec === 'certifications') {
             if (!cvData.certifications || !cvData.certifications.length) return;
-            html += `<div class="ats-section-title">${t('certifications')}</div>`;
+            push(`<div class="ats-section-title">${t('certifications')}</div>`, { keepWithNext: true });
             cvData.certifications.forEach(g => {
                 const issuerHref = g.issuer_url ? (g.issuer_url.startsWith('http')?g.issuer_url:'https://'+g.issuer_url) : '';
                 const issuerHtml = issuerHref
                     ? `<a href="${esc(issuerHref)}" style="color:#1a233b">${esc(g.issuer)}</a>`
                     : esc(g.issuer);
-                html += `<div class="ats-company">${issuerHtml}</div>`;
+                push(`<div class="ats-company">${issuerHtml}</div>`, { keepWithNext: true });
                 (g.items||[]).forEach(item => {
                     const name = typeof item === 'string' ? item : (item.name||'');
                     const url = typeof item === 'string' ? '' : (item.url||'');
@@ -563,26 +573,56 @@ function renderAtsPreview() {
                     const nameHtml = certHref
                         ? `<a href="${esc(certHref)}" style="color:#555">${esc(name)}</a>`
                         : esc(name);
-                    html += `<div class="ats-bullet">• ${nameHtml}</div>`;
+                    push(`<div class="ats-bullet">• ${nameHtml}</div>`);
                 });
             });
-            html += '<div class="ats-hr"></div>';
+            rule();
         }
         if (sec === 'languages') {
             if (!cvData.languages || !cvData.languages.length) return;
-            html += `<div class="ats-section-title">${t('languages')}</div>`;
+            push(`<div class="ats-section-title">${t('languages')}</div>`, { keepWithNext: true });
             cvData.languages.forEach(lang => {
-                html += `<div class="ats-text"><strong>${esc(localizeLanguageName(lang.language, cvData.cv_language || 'en'))}</strong> - ${esc(getProficiencyLabel(lang.level, cvData.cv_language || 'en'))}</div>`;
+                push(`<div class="ats-text"><strong>${esc(localizeLanguageName(lang.language, cvData.cv_language || 'en'))}</strong> - ${esc(getProficiencyLabel(lang.level, cvData.cv_language || 'en'))}</div>`);
             });
-            html += '<div class="ats-hr"></div>';
+            rule();
         }
     });
 
     if (cvData.clause_enabled && cvData.clause_text) {
-        html += `<div style="margin-top:20px;padding-top:8px;border-top:1px solid #ddd;font-size:8px;color:#999;line-height:1.5;font-style:italic">${esc(cvData.clause_text)}</div>`;
+        push(`<div style="margin-top:20px;padding-top:8px;border-top:1px solid #ddd;font-size:8px;color:#999;line-height:1.5;font-style:italic">${esc(cvData.clause_text)}</div>`);
     }
 
-    html += '</div></div>';
-    pagesContainer.innerHTML = html;
+    // Measure each block at the real content width, inside .ats-content so the
+    // font matches, then fill pages greedily.
+    const measure = document.getElementById('cv-measure');
+    measure.style.width = (PAGE_W - ATS_SIDE_PADDING * 2) + 'px';
+    const heights = blocks.map(b => {
+        measure.innerHTML = `<div class="ats-content" style="padding:0">${b.html}</div>`;
+        return measure.offsetHeight;
+    });
+    measure.innerHTML = '';
+    measure.style.width = '';
+
+    const USABLE_H = PAGE_H - ATS_VERTICAL_PADDING * 2;
+    const pages = [[]];
+    let curH = 0;
+    blocks.forEach((block, i) => {
+        let h = heights[i];
+        if (block.keepWithNext && i + 1 < blocks.length) h += heights[i + 1];
+        if (curH > 0 && curH + h > USABLE_H) {
+            pages.push([]);
+            curH = 0;
+        }
+        const page = pages[pages.length - 1];
+        // A rule that would open a page is just a stray line under the margin.
+        if (block.isRule && !page.length) return;
+        page.push(block);
+        curH += heights[i];
+    });
+
+    pagesContainer.innerHTML = pages.map((page, idx) =>
+        `<div class="preview-page ats-preview-page"><div class="ats-content">${page.map(b => b.html).join('')}</div>`
+        + `<div class="preview-page-number">${idx + 1} / ${pages.length}</div></div>`
+    ).join('');
     scheduleAutoSave();
 }
