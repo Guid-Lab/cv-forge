@@ -150,6 +150,10 @@ body {
 
 /* The tab strip scrolls horizontally with its scrollbar hidden, which left no
    sign that there were more tabs. The arrows appear only when it overflows. */
+/* Shown only for the two-column themes, whose side column interleaves with the
+   main column in the PDF text layer and therefore parses badly. */
+.theme-ats-warning { padding: 7px 12px; background: #fff8e6; border-top: 1px solid #f0e0b0; color: #7a5c10; font-size: 11px; line-height: 1.45; }
+
 .panel-tabs-wrap { position: relative; display: flex; align-items: stretch; border-bottom: 2px solid var(--border); background: #fafbfc; flex-shrink: 0; }
 .panel-tabs { display: flex; flex: 1; min-width: 0; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .panel-tabs::-webkit-scrollbar { display: none; }
