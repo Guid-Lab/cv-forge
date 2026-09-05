@@ -218,13 +218,16 @@ function updatePreview() {
                 const projName = proj.url
                     ? wrapLink(proj.url.startsWith('http') ? proj.url : 'https://'+proj.url, esc(proj.name), hc)
                     : esc(proj.name);
-                let h = `<div class="cv-project-item">`;
-                h += `<div class="cv-exp-header"><span class="cv-exp-company" style="color:${hc}">${projName}</span>`;
-                if (proj.date_from || proj.date_to) h += `<span class="cv-exp-date">${esc(_cvd(proj.date_from||''))} - ${esc(_cvd(proj.date_to||''))}</span>`;
-                h += `</div>`;
-                if (proj.role) h += `<div class="cv-exp-role" style="font-style:italic">${esc(proj.role)}</div>`;
-                if (proj.description) h += `<div class="cv-exp-desc">${esc(proj.description)}</div>`;
-                h += `</div>`;
+                let inner = `<div class="cv-exp-header"><span class="cv-exp-company" style="color:${hc}">${projName}</span>`;
+                if (proj.date_from || proj.date_to) inner += `<span class="cv-exp-date">${esc(_cvd(proj.date_from||''))} - ${esc(_cvd(proj.date_to||''))}</span>`;
+                inner += `</div>`;
+                if (proj.role) inner += `<div class="cv-exp-role" style="font-style:italic">${esc(proj.role)}</div>`;
+                if (proj.description) inner += `<div class="cv-exp-desc">${esc(proj.description)}</div>`;
+                // A project picture is optional per project, so the plain block
+                // layout stays in use when there is none.
+                const h = proj.logo
+                    ? `<div class="cv-exp-item"><div style="flex-shrink:0;margin-top:1px">${renderLogoOrInitials(proj.name, proj.logo, 28)}</div><div class="cv-exp-content">${inner}</div></div>`
+                    : `<div class="cv-project-item">${inner}</div>`;
                 mainBlocks.push({ html: h });
             });
         },
