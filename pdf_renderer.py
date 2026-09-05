@@ -40,6 +40,15 @@ def generate_pdf_from_html(html_content):
             '--disable-sync',
             '--no-first-run',
             '--disable-javascript',
+            # The HTML comes from the client, so the renderer must not be able to
+            # reach the network: an <img> pointing at an internal address would
+            # otherwise be fetched and embedded in the PDF handed back to the
+            # caller. Every image the preview produces is a data: URI, which is
+            # unaffected. Loopback is proxied too, since Chromium bypasses
+            # proxies for it by default.
+            '--proxy-server=127.0.0.1:1',
+            '--proxy-bypass-list=<-loopback>',
+            '--host-resolver-rules=MAP * ~NOTFOUND',
             '--window-size=1280,900',
             '--print-to-pdf=' + pdf_path,
             '--print-to-pdf-no-header',
