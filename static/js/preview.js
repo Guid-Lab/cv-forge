@@ -38,6 +38,18 @@ function joinContacts(contacts, renderOne, separator) {
     return out;
 }
 
+// "Issued Sep 2024" or "Issued Sep 2024 (expires Sep 2027)", in the CV language.
+// An empty expiry means the certificate does not expire.
+function certDateText(item) {
+    if (typeof item === 'string') return '';
+    const issued = _cvd(item.date_issued || '');
+    const expires = _cvd(item.date_expires || '');
+    if (!issued && !expires) return '';
+    if (!issued) return `${t('certExpires')} ${expires}`;
+    return expires ? `${t('certIssued')} ${issued} (${t('certExpires')} ${expires})`
+                   : `${t('certIssued')} ${issued}`;
+}
+
 function photoStyle() {
     const shape = cvData.photo_shape || 'circle';
     const borderSetting = cvData.photo_border || 'auto';
@@ -311,7 +323,12 @@ function updatePreview() {
                     const certName = typeof item === 'string' ? item : (item.name || '');
                     const certUrl = typeof item === 'string' ? '' : (item.url || '');
                     const certText = certUrl ? wrapLink(certUrl.startsWith('http') ? certUrl : 'https://'+certUrl, esc(certName), '#555') : esc(certName);
-                    h += `<div class="cv-cert-item-text">${certText}</div>`;
+                    const certDates = certDateText(item);
+                    // The space before the span is a real text node, which is what
+                    // keeps the name and the date apart in the PDF text layer.
+                    h += `<div class="cv-cert-item-text">${certText}`
+                       + (certDates ? ` <span class="cv-cert-item-date">${esc(certDates)}</span>` : '')
+                       + `</div>`;
                 });
                 h += '</div></div>';
                 mainBlocks.push({ html: h });
@@ -587,7 +604,8 @@ function renderAtsPreview() {
                     const nameHtml = certHref
                         ? `<a href="${esc(certHref)}" style="color:#555">${esc(name)}</a>`
                         : esc(name);
-                    push(`<div class="ats-bullet">• ${nameHtml}</div>`);
+                    const dates = certDateText(item);
+                    push(`<div class="ats-bullet">• ${nameHtml}${dates ? ' - ' + esc(dates) : ''}</div>`);
                 });
             });
             rule();

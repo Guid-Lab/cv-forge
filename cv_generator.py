@@ -31,26 +31,31 @@ DOCX_TRANSLATIONS = {
         'summary': 'SUMMARY', 'experience': 'WORK EXPERIENCE', 'skills': 'SKILLS',
         'projects': 'PROJECTS', 'courses': 'COURSES & TRAINING', 'education': 'EDUCATION',
         'languages': 'LANGUAGES', 'certifications': 'CERTIFICATIONS',
+        'certIssued': 'Issued', 'certExpires': 'expires',
     },
     'pl': {
         'summary': 'PODSUMOWANIE', 'experience': 'DOŚWIADCZENIE ZAWODOWE', 'skills': 'UMIEJĘTNOŚCI',
         'projects': 'PROJEKTY', 'courses': 'KURSY I SZKOLENIA', 'education': 'EDUKACJA',
         'languages': 'JĘZYKI', 'certifications': 'CERTYFIKATY',
+        'certIssued': 'Wydany', 'certExpires': 'wygasa',
     },
     'de': {
         'summary': 'ZUSAMMENFASSUNG', 'experience': 'BERUFSERFAHRUNG', 'skills': 'FÄHIGKEITEN',
         'projects': 'PROJEKTE', 'courses': 'KURSE & WEITERBILDUNG', 'education': 'AUSBILDUNG',
         'languages': 'SPRACHEN', 'certifications': 'ZERTIFIZIERUNGEN',
+        'certIssued': 'Ausgestellt', 'certExpires': 'gültig bis',
     },
     'fr': {
         'summary': 'RÉSUMÉ', 'experience': 'EXPÉRIENCE PROFESSIONNELLE', 'skills': 'COMPÉTENCES',
         'projects': 'PROJETS', 'courses': 'FORMATIONS', 'education': 'FORMATION',
         'languages': 'LANGUES', 'certifications': 'CERTIFICATIONS',
+        'certIssued': 'Délivré', 'certExpires': 'expire',
     },
     'es': {
         'summary': 'RESUMEN', 'experience': 'EXPERIENCIA LABORAL', 'skills': 'HABILIDADES',
         'projects': 'PROYECTOS', 'courses': 'CURSOS Y FORMACIÓN', 'education': 'EDUCACIÓN',
         'languages': 'IDIOMAS', 'certifications': 'CERTIFICACIONES',
+        'certIssued': 'Emitido', 'certExpires': 'caduca',
     },
 }
 
@@ -668,6 +673,24 @@ def _add_languages(doc, languages, lang='en'):
         level = _proficiency_label(entry.get('level', ''), lang)
         run = p.add_run(f" - {level}")
 
+def _cert_date_text(item, lang):
+    """"Issued Sep 2024" or "Issued Sep 2024 (expires Sep 2027)".
+
+    An empty expiry means the certificate does not expire.
+    """
+    if not isinstance(item, dict):
+        return ''
+    issued = _format_date(item.get('date_issued', ''), lang)
+    expires = _format_date(item.get('date_expires', ''), lang)
+    if not issued and not expires:
+        return ''
+    if not issued:
+        return f"{_t(lang, 'certExpires')} {expires}"
+    if expires:
+        return f"{_t(lang, 'certIssued')} {issued} ({_t(lang, 'certExpires')} {expires})"
+    return f"{_t(lang, 'certIssued')} {issued}"
+
+
 def _add_certifications(doc, certifications, lang='en'):
     """Add certifications section."""
     p = doc.add_paragraph(_t(lang, 'certifications'), style='CVHeading1')
@@ -704,6 +727,11 @@ def _add_certifications(doc, certifications, lang='en'):
             else:
                 run = p.add_run(f"• {item_name}")
                 run.font.size = Pt(9.5)
+            dates = _cert_date_text(item, lang)
+            if dates:
+                run = p.add_run(f" - {dates}")
+                run.font.size = Pt(9.5)
+                run.font.color.rgb = RGBColor(0x77, 0x77, 0x77)
 
 def generate_docx(data):
     """Generate ATS-friendly DOCX file."""
