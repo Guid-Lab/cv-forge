@@ -382,6 +382,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let _resizeTimer;
     window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(() => updatePreview(), 250); });
     initTabArrows();
+    updateThemeAtsWarning();
 });
 
 function renderAll() {
@@ -442,10 +443,23 @@ function migrateWorkExperience(workExp) {
     return groupOrder.map(name => groupMap[name]);
 }
 
+// Themes with a side column: their text layer interleaves the two columns, so
+// an ATS reads contact details in the middle of a job entry.
+const TWO_COLUMN_THEMES = ['sidebar', 'elegant'];
+
+function updateThemeAtsWarning() {
+    const el = document.getElementById('theme-ats-warning');
+    if (!el) return;
+    const show = TWO_COLUMN_THEMES.includes(currentTheme);
+    if (show) el.textContent = _ui('twoColumnAtsWarning');
+    el.hidden = !show;
+}
+
 function setTheme(theme, btn) {
     currentTheme = theme; cvData.theme = theme;
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
+    updateThemeAtsWarning();
     updatePreview();
 }
 
