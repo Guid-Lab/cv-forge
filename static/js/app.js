@@ -664,7 +664,10 @@ function collectData() {
             const name = row.querySelector('.cert-item-input').value.trim();
             const urlInp = row.querySelector('.cert-item-url');
             const url = urlInp ? urlInp.value.trim() : '';
-            if (name) items.push({ name, url });
+            // An empty expiry means the certificate does not expire.
+            const date_issued = readDateFromSelects(row.querySelector('.cert-issued'));
+            const date_expires = readDateFromSelects(row.querySelector('.cert-expires'));
+            if (name) items.push({ name, url, date_issued, date_expires });
         });
         cvData.certifications.push({
             issuer: card.querySelector('.cert-issuer').value,
@@ -1165,9 +1168,15 @@ function renderCertificationsList() {
         let itemsHtml = (g.items||[]).map((item,ii) => {
             const name = typeof item === 'string' ? item : (item.name || '');
             const url = typeof item === 'string' ? '' : (item.url || '');
+            const issued = typeof item === 'string' ? '' : (item.date_issued || '');
+            const expires = typeof item === 'string' ? '' : (item.date_expires || '');
             return `<div class="cert-item-row">
                 <div class="cert-item"><input type="text" class="cert-item-input" value="${esc(name)}" onchange="updatePreview()"><button class="btn-remove-item" onclick="removeCertItem(${gi},${ii})">&times;</button></div>
                 <input type="text" class="cert-item-url" value="${esc(url)}" placeholder="${_ui('verificationUrl')}" onchange="updatePreview()" style="width:100%;font-size:10px;padding:3px 8px;color:#888;border:1px solid #eee;border-radius:4px;margin-bottom:4px">
+                <div class="form-row cert-item-dates">
+                    <div class="form-group"><label>${_ui('certIssued')}</label>${makeDateFromHtml('cert-issued', issued)}</div>
+                    <div class="form-group"><label>${_ui('certExpires')}</label>${makeDateFromHtml('cert-expires', expires)}</div>
+                </div>
             </div>`;
         }).join('');
 
@@ -1192,10 +1201,10 @@ function renderCertificationsList() {
         c.appendChild(card);
     });
 }
-function addCertGroup() { collectData(); cvData.certifications.push({issuer:'',issuer_url:'',logo:'',items:[{name:'',url:''}]}); renderCertificationsList(); updatePreview(); }
+function addCertGroup() { collectData(); cvData.certifications.push({issuer:'',issuer_url:'',logo:'',items:[{name:'',url:'',date_issued:'',date_expires:''}]}); renderCertificationsList(); updatePreview(); }
 function removeCertGroup(gi) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.certifications.splice(gi,1); renderCertificationsList(); updatePreview(); }); }
 function moveCertGroup(gi,dir) { collectData(); const a=cvData.certifications,ni=gi+dir; if(ni<0||ni>=a.length)return; [a[gi],a[ni]]=[a[ni],a[gi]]; renderCertificationsList(); updatePreview(); }
-function addCertItem(gi) { collectData(); cvData.certifications[gi].items.push({name:'',url:''}); renderCertificationsList(); updatePreview(); }
+function addCertItem(gi) { collectData(); cvData.certifications[gi].items.push({name:'',url:'',date_issued:'',date_expires:''}); renderCertificationsList(); updatePreview(); }
 function removeCertItem(gi,ii) { collectData(); cvData.certifications[gi].items.splice(ii,1); renderCertificationsList(); updatePreview(); }
 
 function showCertLogoMenu(gi, el) {
