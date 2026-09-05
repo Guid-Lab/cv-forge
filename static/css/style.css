@@ -522,21 +522,27 @@ body {
 .toast.show { opacity: 1; transform: translateY(0); }
 .toast.error { background: var(--danger); }
 
-.ats-preview-page { height: auto !important; min-height: 1123px; }
-.ats-content { padding: 40px 50px; font-family: 'Calibri', 'Segoe UI', sans-serif; }
-.ats-name { font-size: 22px; font-weight: 700; color: #1a233b; margin-bottom: 2px; }
-.ats-title { font-size: 12px; color: #556580; margin-bottom: 6px; }
-.ats-contacts { font-size: 9.5px; color: #556580; margin-bottom: 4px; }
+/* ATS preview.
+   Sizes and spacing are given in the same units cv_generator.py uses for the
+   DOCX (points, centimetres, 0.2in indents) so the preview paginates the way
+   the exported document does. They were previously the same numbers written as
+   px, which rendered everything at 75% and understated the page count.
+   LibreOffice still lays the DOCX out itself, so this is an approximation. */
+.ats-preview-page { height: 1123px; }
+.ats-content { padding: 1.5cm 2cm; font-family: 'Calibri', 'Carlito', 'Segoe UI', sans-serif; font-size: 10pt; line-height: 1.4; }
+.ats-name { font-size: 22pt; font-weight: 700; color: #1a233b; margin-bottom: 0; }
+.ats-title { font-size: 12pt; color: #556580; margin-bottom: 4pt; }
+.ats-contacts { font-size: 9.5pt; color: #556580; margin-bottom: 2pt; }
 .ats-contacts a { color: #556580; text-decoration: underline; }
-.ats-hr { height: 1px; background: #ccc; margin: 10px 0; }
-.ats-section-title { font-size: 13px; font-weight: 700; color: #1a233b; margin-bottom: 6px; margin-top: 4px; }
-.ats-company { font-size: 11px; font-weight: 700; color: #1a233b; margin-top: 8px; }
-.ats-company:first-of-type { margin-top: 0; }
-.ats-role { font-size: 10px; color: #444; font-style: italic; margin-bottom: 2px; }
-.ats-bullet { font-size: 9.5px; color: #555; line-height: 1.55; padding-left: 12px; }
-.ats-text { font-size: 9.5px; color: #444; line-height: 1.6; }
-.ats-desc { font-size: 9.5px; color: #555; line-height: 1.55; padding-left: 12px; }
-.ats-skill-line { font-size: 10px; color: #444; margin-bottom: 3px; line-height: 1.5; }
+.ats-hr { height: 1px; background: #ccc; margin: 2pt 0; }
+.ats-section-title { font-size: 13pt; font-weight: 700; color: #1a233b; margin-top: 16pt; margin-bottom: 6pt; }
+.ats-company { font-size: 11pt; font-weight: 700; color: #1a233b; margin-top: 8pt; margin-bottom: 1pt; }
+.ats-company:first-of-type { margin-top: 2pt; }
+.ats-role { font-size: 10pt; color: #444; font-style: italic; margin-bottom: 2pt; }
+.ats-bullet { font-size: 9.5pt; color: #555; padding-left: 0.2in; margin-bottom: 1pt; }
+.ats-text { font-size: 10pt; color: #444; margin-bottom: 4pt; }
+.ats-desc { font-size: 9.5pt; color: #555; padding-left: 0.2in; margin-bottom: 2pt; }
+.ats-skill-line { font-size: 9.5pt; color: #444; margin-bottom: 2pt; }
 
 /* --- Tablet (<1200px) --- */
 @media (max-width: 1200px) {
