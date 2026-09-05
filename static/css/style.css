@@ -148,8 +148,17 @@ body {
 .tp-modern { flex-direction: row; background: white; } .tp-modern .tp-strip { width: 3px; background: var(--navy); } .tp-modern .tp-rest { flex: 1; display: flex; flex-direction: column; padding: 4px; gap: 2px; } .tp-modern .tp-name { height: 3px; width: 20px; background: var(--navy); } .tp-modern .tp-lines { height: 3px; width: 16px; background: #eee; }
 .tp-elegant { display: flex; background: white; } .tp-elegant .tp-elside { width: 12px; background: #e8edf2; } .tp-elegant .tp-elmain { flex: 1; background: white; }
 
-.panel-tabs { display: flex; border-bottom: 2px solid var(--border); background: #fafbfc; flex-shrink: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+/* The tab strip scrolls horizontally with its scrollbar hidden, which left no
+   sign that there were more tabs. The arrows appear only when it overflows. */
+.panel-tabs-wrap { position: relative; display: flex; align-items: stretch; border-bottom: 2px solid var(--border); background: #fafbfc; flex-shrink: 0; }
+.panel-tabs { display: flex; flex: 1; min-width: 0; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .panel-tabs::-webkit-scrollbar { display: none; }
+.tabs-arrow { display: none; flex-shrink: 0; width: 26px; border: none; background: #fafbfc; color: var(--text-muted); font-size: 18px; line-height: 1; cursor: pointer; padding: 0; }
+.tabs-arrow:hover { color: var(--accent); background: #f0f2f5; }
+.tabs-arrow-left { box-shadow: 6px 0 6px -6px rgba(0,0,0,0.25); }
+.tabs-arrow-right { box-shadow: -6px 0 6px -6px rgba(0,0,0,0.25); }
+.panel-tabs-wrap.can-scroll-left .tabs-arrow-left,
+.panel-tabs-wrap.can-scroll-right .tabs-arrow-right { display: block; }
 .tab { padding: 12px 14px; border: none; background: none; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; transition: all 0.15s; }
 .tab:hover { color: var(--text); }
 .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
