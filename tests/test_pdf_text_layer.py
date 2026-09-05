@@ -30,6 +30,7 @@ ADJACENT_PAIRS = [
     ('ISO 27001', 'NIS2'),
     ('Cloud', 'Kubernetes'),
     ('Kubernetes', 'Terraform'),
+    ('OSCP', 'Issued Sep 2024'),
     ('Linux Foundation', '2023'),
     ('Threat Modeling', '2021'),
     ('jan@example.com', '+48123456789'),

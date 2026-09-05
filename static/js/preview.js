@@ -24,6 +24,32 @@ function wrapLink(href, content, color) {
     return `<a href="${esc(href)}" style="color:${color||'inherit'};text-decoration:none" target="_blank">${content}</a>`;
 }
 
+// A wrapping flex row breaks wherever a zero-height, full-width item sits, so
+// a contact marked break_after pushes the rest of the row onto the next line.
+const CONTACT_LINE_BREAK = '<div class="cv-contact-break"></div>';
+
+function joinContacts(contacts, renderOne, separator) {
+    let out = '';
+    contacts.forEach((c, i) => {
+        if (i > 0 && separator && !contacts[i - 1].break_after) out += separator;
+        out += renderOne(c);
+        if (c.break_after && i < contacts.length - 1) out += CONTACT_LINE_BREAK;
+    });
+    return out;
+}
+
+// "Issued Sep 2024" or "Issued Sep 2024 (expires Sep 2027)", in the CV language.
+// An empty expiry means the certificate does not expire.
+function certDateText(item) {
+    if (typeof item === 'string') return '';
+    const issued = _cvd(item.date_issued || '');
+    const expires = _cvd(item.date_expires || '');
+    if (!issued && !expires) return '';
+    if (!issued) return `${t('certExpires')} ${expires}`;
+    return expires ? `${t('certIssued')} ${issued} (${t('certExpires')} ${expires})`
+                   : `${t('certIssued')} ${issued}`;
+}
+
 function photoStyle() {
     const shape = cvData.photo_shape || 'circle';
     const borderSetting = cvData.photo_border || 'auto';
@@ -109,10 +135,10 @@ function renderSidebar(p) {
 
 function renderTopBar(p) {
     const scheme = getScheme();
-    let contactsHtml = (p.contacts||[]).map(c => {
+    let contactsHtml = joinContacts(p.contacts||[], c => {
         const val = c.link ? wrapLink(contactHref(c.icon, c.value), esc(c.value), 'rgba(255,255,255,0.8)') : esc(c.value);
         return `<span class="cv-topbar-contact">${getContactSvg(c.icon,'rgba(255,255,255,0.7)')} ${val}</span>`;
-    }).join('');
+    });
     const photoHtml = renderPhoto(p.photo);
     return `<div class="cv-topbar-header" style="background:${scheme.primary}">${photoHtml}<div class="cv-topbar-info"><div class="cv-topbar-name">${esc(p.name)}</div><div class="cv-topbar-title">${esc(p.title)}</div><div class="cv-topbar-contacts">${contactsHtml}</div></div></div>`;
 }
@@ -120,10 +146,10 @@ function renderTopBar(p) {
 function renderMinimalHeader(p) {
     const scheme = getScheme();
     const hc = getHeadingColor();
-    let contactsHtml = (p.contacts||[]).map(c => {
+    let contactsHtml = joinContacts(p.contacts||[], c => {
         const val = c.link ? wrapLink(contactHref(c.icon, c.value), esc(c.value), '#555') : esc(c.value);
         return `<span class="cv-min-contact">${getContactSvg(c.icon,'#888')} ${val}</span>`;
-    }).join('');
+    });
     const photoHtml = renderPhoto(p.photo);
     return `<div class="cv-minimal-header">${photoHtml}<div class="cv-min-name" style="color:${hc}">${esc(p.name)}</div><div class="cv-min-title">${esc(p.title)}</div><div class="cv-min-line" style="background:${scheme.primary}"></div><div class="cv-min-contacts">${contactsHtml}</div></div>`;
 }
@@ -131,10 +157,10 @@ function renderMinimalHeader(p) {
 function renderExecutiveHeader(p) {
     const scheme = getScheme();
     const hc = getHeadingColor();
-    let contactsHtml = (p.contacts||[]).map(c => {
+    let contactsHtml = joinContacts(p.contacts||[], c => {
         const val = c.link ? wrapLink(contactHref(c.icon, c.value), esc(c.value), hc) : esc(c.value);
         return `<span class="cv-exec-contact">${getContactSvg(c.icon, scheme.light)} ${val}</span>`;
-    }).join('<span class="cv-exec-sep">|</span>');
+    }, '<span class="cv-exec-sep">|</span>');
     const photoHtml = renderPhoto(p.photo);
     return `<div class="cv-executive-header">${photoHtml}<div class="cv-exec-name" style="color:${hc}">${esc(p.name)}</div><div class="cv-exec-title">${esc(p.title)}</div><div class="cv-exec-bar" style="background:${scheme.primary}"></div><div class="cv-exec-contacts">${contactsHtml}</div></div>`;
 }
@@ -297,7 +323,12 @@ function updatePreview() {
                     const certName = typeof item === 'string' ? item : (item.name || '');
                     const certUrl = typeof item === 'string' ? '' : (item.url || '');
                     const certText = certUrl ? wrapLink(certUrl.startsWith('http') ? certUrl : 'https://'+certUrl, esc(certName), '#555') : esc(certName);
-                    h += `<div class="cv-cert-item-text">${certText}</div>`;
+                    const certDates = certDateText(item);
+                    // The space before the span is a real text node, which is what
+                    // keeps the name and the date apart in the PDF text layer.
+                    h += `<div class="cv-cert-item-text">${certText}`
+                       + (certDates ? ` <span class="cv-cert-item-date">${esc(certDates)}</span>` : '')
+                       + `</div>`;
                 });
                 h += '</div></div>';
                 mainBlocks.push({ html: h });
@@ -573,7 +604,8 @@ function renderAtsPreview() {
                     const nameHtml = certHref
                         ? `<a href="${esc(certHref)}" style="color:#555">${esc(name)}</a>`
                         : esc(name);
-                    push(`<div class="ats-bullet">• ${nameHtml}</div>`);
+                    const dates = certDateText(item);
+                    push(`<div class="ats-bullet">• ${nameHtml}${dates ? ' - ' + esc(dates) : ''}</div>`);
                 });
             });
             rule();

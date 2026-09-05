@@ -60,6 +60,10 @@ const UI = {
         sepLine: '── Line ──', sepSpace: '⬜ Space', addLine: '+ Line', addSpace: '+ Space',
         dragHint: 'Drag', showSection: 'Show section', hideSection: 'Hide section',
         yearOnly: '— (year only)', yearLabel: 'Year',
+        breakAfterHint: 'Line break after this contact',
+        loadLinkExpired: 'That link has expired. Ask for a fresh one, or load your JSON file.',
+        certIssued: 'Issued', certExpires: 'Expires (empty = no expiry)', certIssuedShort: 'Issued', certExpiresShort: 'expires',
+        twoColumnAtsWarning: 'Two-column layout: applicant tracking systems read the side column mixed into the main one. Send the ATS friendly file to job boards and keep this one for people.',
         monthNames: ['January','February','March','April','May','June','July','August','September','October','November','December'],
         ctLocation: 'Location', ctEmail: 'E-mail', ctPhone: 'Phone', ctGithub: 'GitHub',
         ctLinkedin: 'LinkedIn', ctWebsite: 'Website', ctTwitter: 'Twitter/X',
@@ -122,6 +126,10 @@ const UI = {
         sepLine: '── Linia ──', sepSpace: '⬜ Odstęp', addLine: '+ Linia', addSpace: '+ Odstęp',
         dragHint: 'Przeciągnij', showSection: 'Pokaż sekcję', hideSection: 'Ukryj sekcję',
         yearOnly: '— (tylko rok)', yearLabel: 'Rok',
+        breakAfterHint: 'Łam linię po tym kontakcie',
+        loadLinkExpired: 'Ten link wygasł. Poproś o nowy albo wczytaj plik JSON.',
+        certIssued: 'Wydany', certExpires: 'Wygasa (puste = bezterminowo)', certIssuedShort: 'Wydany', certExpiresShort: 'wygasa',
+        twoColumnAtsWarning: 'Układ dwukolumnowy: systemy ATS czytają pasek boczny wymieszany z treścią główną. Na portale wysyłaj plik ATS friendly, a ten zostaw dla ludzi.',
         monthNames: ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'],
         ctLocation: 'Lokalizacja', ctEmail: 'E-mail', ctPhone: 'Telefon', ctGithub: 'GitHub',
         ctLinkedin: 'LinkedIn', ctWebsite: 'Strona www', ctTwitter: 'Twitter/X',
@@ -184,6 +192,10 @@ const UI = {
         sepLine: '── Linie ──', sepSpace: '⬜ Abstand', addLine: '+ Linie', addSpace: '+ Abstand',
         dragHint: 'Ziehen', showSection: 'Abschnitt anzeigen', hideSection: 'Abschnitt ausblenden',
         yearOnly: '— (nur Jahr)', yearLabel: 'Jahr',
+        breakAfterHint: 'Zeilenumbruch nach diesem Kontakt',
+        loadLinkExpired: 'Dieser Link ist abgelaufen. Fordern Sie einen neuen an oder laden Sie Ihre JSON-Datei.',
+        certIssued: 'Ausgestellt', certExpires: 'Gültig bis (leer = unbefristet)', certIssuedShort: 'Ausgestellt', certExpiresShort: 'gültig bis',
+        twoColumnAtsWarning: 'Zweispaltiges Layout: Bewerbermanagementsysteme lesen die Seitenspalte vermischt mit dem Hauptteil. Senden Sie die ATS-freundliche Datei an Jobportale und behalten Sie diese für Menschen.',
         monthNames: ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
         ctLocation: 'Standort', ctEmail: 'E-Mail', ctPhone: 'Telefon', ctGithub: 'GitHub',
         ctLinkedin: 'LinkedIn', ctWebsite: 'Webseite', ctTwitter: 'Twitter/X',
@@ -246,6 +258,10 @@ const UI = {
         sepLine: '── Ligne ──', sepSpace: '⬜ Espace', addLine: '+ Ligne', addSpace: '+ Espace',
         dragHint: 'Glisser', showSection: 'Afficher la section', hideSection: 'Masquer la section',
         yearOnly: '— (année seule)', yearLabel: 'Année',
+        breakAfterHint: 'Saut de ligne après ce contact',
+        loadLinkExpired: 'Ce lien a expiré. Demandez-en un nouveau ou chargez votre fichier JSON.',
+        certIssued: 'Délivré', certExpires: 'Expire (vide = sans expiration)', certIssuedShort: 'Délivré', certExpiresShort: 'expire',
+        twoColumnAtsWarning: 'Mise en page à deux colonnes : les systèmes de suivi des candidatures lisent la colonne latérale mêlée au corps du CV. Envoyez le fichier ATS friendly aux sites d\'emploi et gardez celui-ci pour les humains.',
         monthNames: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
         ctLocation: 'Lieu', ctEmail: 'E-mail', ctPhone: 'Téléphone', ctGithub: 'GitHub',
         ctLinkedin: 'LinkedIn', ctWebsite: 'Site web', ctTwitter: 'Twitter/X',
@@ -308,6 +324,10 @@ const UI = {
         sepLine: '── Línea ──', sepSpace: '⬜ Espacio', addLine: '+ Línea', addSpace: '+ Espacio',
         dragHint: 'Arrastrar', showSection: 'Mostrar sección', hideSection: 'Ocultar sección',
         yearOnly: '— (solo año)', yearLabel: 'Año',
+        breakAfterHint: 'Salto de línea tras este contacto',
+        loadLinkExpired: 'Ese enlace ha caducado. Pide uno nuevo o carga tu archivo JSON.',
+        certIssued: 'Emitido', certExpires: 'Caduca (vacío = sin caducidad)', certIssuedShort: 'Emitido', certExpiresShort: 'caduca',
+        twoColumnAtsWarning: 'Diseño a dos columnas: los sistemas de seguimiento de candidaturas leen la columna lateral mezclada con el contenido principal. Envía el archivo ATS friendly a los portales de empleo y guarda este para personas.',
         monthNames: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
         ctLocation: 'Ubicación', ctEmail: 'E-mail', ctPhone: 'Teléfono', ctGithub: 'GitHub',
         ctLinkedin: 'LinkedIn', ctWebsite: 'Sitio web', ctTwitter: 'Twitter/X',
@@ -373,6 +393,7 @@ function applyUiLanguage() {
     setText('dl-hint-ats-pdf', 'dlHintAtsPdf');
     setText('dl-hint-pretty-pdf', 'dlHintPretty');
     setText('theme-label-text', 'themeLabel');
+    if (typeof updateThemeAtsWarning === 'function') updateThemeAtsWarning();
 
     setText('tab-text-settings', 'tabSettings');
     setText('tab-text-personal', 'tabPersonal');

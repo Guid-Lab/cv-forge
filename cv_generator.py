@@ -18,6 +18,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import threading
 
 from docx import Document
 from docx.shared import Pt, Inches, Cm, RGBColor
@@ -31,26 +32,31 @@ DOCX_TRANSLATIONS = {
         'summary': 'SUMMARY', 'experience': 'WORK EXPERIENCE', 'skills': 'SKILLS',
         'projects': 'PROJECTS', 'courses': 'COURSES & TRAINING', 'education': 'EDUCATION',
         'languages': 'LANGUAGES', 'certifications': 'CERTIFICATIONS',
+        'certIssued': 'Issued', 'certExpires': 'expires',
     },
     'pl': {
         'summary': 'PODSUMOWANIE', 'experience': 'DOŚWIADCZENIE ZAWODOWE', 'skills': 'UMIEJĘTNOŚCI',
         'projects': 'PROJEKTY', 'courses': 'KURSY I SZKOLENIA', 'education': 'EDUKACJA',
         'languages': 'JĘZYKI', 'certifications': 'CERTYFIKATY',
+        'certIssued': 'Wydany', 'certExpires': 'wygasa',
     },
     'de': {
         'summary': 'ZUSAMMENFASSUNG', 'experience': 'BERUFSERFAHRUNG', 'skills': 'FÄHIGKEITEN',
         'projects': 'PROJEKTE', 'courses': 'KURSE & WEITERBILDUNG', 'education': 'AUSBILDUNG',
         'languages': 'SPRACHEN', 'certifications': 'ZERTIFIZIERUNGEN',
+        'certIssued': 'Ausgestellt', 'certExpires': 'gültig bis',
     },
     'fr': {
         'summary': 'RÉSUMÉ', 'experience': 'EXPÉRIENCE PROFESSIONNELLE', 'skills': 'COMPÉTENCES',
         'projects': 'PROJETS', 'courses': 'FORMATIONS', 'education': 'FORMATION',
         'languages': 'LANGUES', 'certifications': 'CERTIFICATIONS',
+        'certIssued': 'Délivré', 'certExpires': 'expire',
     },
     'es': {
         'summary': 'RESUMEN', 'experience': 'EXPERIENCIA LABORAL', 'skills': 'HABILIDADES',
         'projects': 'PROYECTOS', 'courses': 'CURSOS Y FORMACIÓN', 'education': 'EDUCACIÓN',
         'languages': 'IDIOMAS', 'certifications': 'CERTIFICACIONES',
+        'certIssued': 'Emitido', 'certExpires': 'caduca',
     },
 }
 
@@ -668,6 +674,24 @@ def _add_languages(doc, languages, lang='en'):
         level = _proficiency_label(entry.get('level', ''), lang)
         run = p.add_run(f" - {level}")
 
+def _cert_date_text(item, lang):
+    """"Issued Sep 2024" or "Issued Sep 2024 (expires Sep 2027)".
+
+    An empty expiry means the certificate does not expire.
+    """
+    if not isinstance(item, dict):
+        return ''
+    issued = _format_date(item.get('date_issued', ''), lang)
+    expires = _format_date(item.get('date_expires', ''), lang)
+    if not issued and not expires:
+        return ''
+    if not issued:
+        return f"{_t(lang, 'certExpires')} {expires}"
+    if expires:
+        return f"{_t(lang, 'certIssued')} {issued} ({_t(lang, 'certExpires')} {expires})"
+    return f"{_t(lang, 'certIssued')} {issued}"
+
+
 def _add_certifications(doc, certifications, lang='en'):
     """Add certifications section."""
     p = doc.add_paragraph(_t(lang, 'certifications'), style='CVHeading1')
@@ -704,6 +728,11 @@ def _add_certifications(doc, certifications, lang='en'):
             else:
                 run = p.add_run(f"• {item_name}")
                 run.font.size = Pt(9.5)
+            dates = _cert_date_text(item, lang)
+            if dates:
+                run = p.add_run(f" - {dates}")
+                run.font.size = Pt(9.5)
+                run.font.color.rgb = RGBColor(0x77, 0x77, 0x77)
 
 def generate_docx(data):
     """Generate ATS-friendly DOCX file."""
@@ -764,6 +793,22 @@ def generate_docx(data):
     doc.save(tmp.name)
     return tmp.name
 
+class ConverterBusy(RuntimeError):
+    """No conversion slot became free in time."""
+
+
+# LibreOffice needs a few hundred MB while it runs. The deployment gives the
+# whole container 1 GB and one shared core, so a second conversion in parallel
+# buys nothing and risks the OOM killer taking every in-flight request with it.
+# Queue instead, and give up rather than let a caller wait forever.
+_CONVERT_SLOT = threading.Semaphore(1)
+_CONVERT_WAIT = 30
+
+# Only one conversion runs at a time, so they can share one profile. Building a
+# fresh one per call was the slowest part of a cold conversion.
+_LO_PROFILE = os.path.join(tempfile.gettempdir(), 'cv_forge_lo_profile')
+
+
 def generate_pdf(data):
     """Generate PDF from DOCX using LibreOffice."""
     docx_path = generate_docx(data)
@@ -773,19 +818,29 @@ def generate_pdf(data):
     if not soffice:
         raise RuntimeError("LibreOffice (soffice) not found")
 
+    if not _CONVERT_SLOT.acquire(timeout=_CONVERT_WAIT):
+        try:
+            os.unlink(docx_path)
+        except OSError:
+            pass
+        raise ConverterBusy("Document conversion is busy")
+
     try:
-        lo_profile = tempfile.mkdtemp(prefix='lo_profile_')
+        os.makedirs(_LO_PROFILE, exist_ok=True)
         subprocess.run([
             soffice, '--headless',
-            f'-env:UserInstallation=file://{lo_profile}',
+            f'-env:UserInstallation=file://{_LO_PROFILE}',
             '--convert-to', 'pdf',
             '--outdir', out_dir,
             docx_path
         ], check=True, capture_output=True, timeout=60)
-        shutil.rmtree(lo_profile, ignore_errors=True)
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError) as e:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError):
+        # A conversion that died may have left the profile inconsistent, and
+        # keeping a broken one would poison every later call.
+        shutil.rmtree(_LO_PROFILE, ignore_errors=True)
         raise RuntimeError("PDF generation failed")
     finally:
+        _CONVERT_SLOT.release()
         try:
             os.unlink(docx_path)
         except OSError:
