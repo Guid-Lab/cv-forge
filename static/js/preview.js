@@ -190,21 +190,17 @@ function updatePreview() {
                 if (currentTheme === 'executive') {
                     h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-inline" style="color:#555;font-size:9px">${items.map(i=>esc(i)).join(', ')}</div></div>`;
                 } else if (currentTheme === 'modern') {
-                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-tags">`;
-                    items.forEach(item => {
-                        h += `<span class="cv-skill-tag cv-skill-modern" style="border-left:2px solid ${scheme.primary};background:#f8f9fb;color:#333">${esc(item)}</span>`;
-                    });
-                    h += '</div></div>';
+                    const tags = items.map(item =>
+                        `<span class="cv-skill-tag cv-skill-modern" style="border-left:2px solid ${scheme.primary};background:#f8f9fb;color:#333">${esc(item)}</span>`);
+                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-tags">${tags.join(' ')}</div></div>`;
                 } else if (currentTheme === 'elegant') {
                     h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-inline" style="color:#555;font-size:9px">${items.map(i=>`<span style="background:${scheme.primary}08;padding:1px 6px;border-radius:2px">${esc(i)}</span>`).join(' ')}</div></div>`;
                 } else if (currentTheme === 'minimal') {
                     h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-inline" style="color:#555;font-size:9px">${items.map(i=>esc(i)).join(' · ')}</div></div>`;
                 } else {
-                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-tags">`;
-                    items.forEach(item => {
-                        h += `<span class="cv-skill-tag" style="background:${scheme.primary}0d;color:${scheme.primary};border:1px solid ${scheme.primary}25">${esc(item)}</span>`;
-                    });
-                    h += '</div></div>';
+                    const tags = items.map(item =>
+                        `<span class="cv-skill-tag" style="background:${scheme.primary}0d;color:${scheme.primary};border:1px solid ${scheme.primary}25">${esc(item)}</span>`);
+                    h += `<div class="cv-skill-category"><span class="cv-skill-cat-name" style="color:${hc}">${esc(cat.category)}</span><div class="cv-skill-tags">${tags.join(' ')}</div></div>`;
                 }
             });
             h += '</div>';
