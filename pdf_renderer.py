@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import threading
 
 def _find_chromium():
     """Find Chromium/Chrome binary."""
@@ -17,8 +18,22 @@ def _find_chromium():
     return chromium
 
 
+class RendererBusy(RuntimeError):
+    """No render slot became free in time."""
+
+
+# A headless Chromium render peaks at a few hundred MB. The deployment has 1 GB
+# and one shared core for the whole container, so running two at once mostly
+# buys an OOM kill that takes the other request down with it.
+_RENDER_SLOT = threading.Semaphore(1)
+_RENDER_WAIT = 30
+
+
 def generate_pdf_from_html(html_content):
     """Render HTML to A4 PDF using Chromium headless."""
+    if not _RENDER_SLOT.acquire(timeout=_RENDER_WAIT):
+        raise RendererBusy("PDF rendering is busy")
+
     pdf_file = tempfile.NamedTemporaryFile(suffix='.pdf', delete=False)
     pdf_path = pdf_file.name
     pdf_file.close()
@@ -55,7 +70,15 @@ def generate_pdf_from_html(html_content):
             '--no-pdf-header-footer',
             f'file://{html_path}',
         ], check=True, capture_output=True, timeout=30)
+    except Exception:
+        # Nothing downstream will send this file, so do not leave it behind.
+        try:
+            os.unlink(pdf_path)
+        except OSError:
+            pass
+        raise
     finally:
+        _RENDER_SLOT.release()
         try:
             os.unlink(html_path)
         except OSError:

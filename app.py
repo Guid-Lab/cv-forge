@@ -16,8 +16,8 @@ from flask import Flask, render_template, request, jsonify, send_file, Response,
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-from cv_generator import generate_docx, generate_pdf
-from pdf_renderer import generate_pdf_from_html
+from cv_generator import generate_docx, generate_pdf, ConverterBusy
+from pdf_renderer import generate_pdf_from_html, RendererBusy
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
@@ -232,6 +232,8 @@ body {{ margin: 0; padding: 0; background: white; }}
         cv_data = data.get('cv_data') if isinstance(data.get('cv_data'), dict) else data
         name = _cv_filename(cv_data, 'pdf')
         return _send_temp_file(path, download_name=name)
+    except RendererBusy:
+        return jsonify({'error': 'Server busy, try again in a moment'}), 503, {'Retry-After': '10'}
     except Exception as e:
         logger.exception("PDF generation failed")
         return jsonify({'error': 'PDF generation failed'}), 500
@@ -252,6 +254,8 @@ def gen_ats_pdf():
         return _send_temp_file(path, download_name=name)
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
+    except ConverterBusy:
+        return jsonify({'error': 'Server busy, try again in a moment'}), 503, {'Retry-After': '10'}
     except Exception as e:
         logger.exception("ATS PDF generation failed")
         return jsonify({'error': 'PDF generation failed'}), 500
