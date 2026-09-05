@@ -1682,23 +1682,40 @@ const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 const MONTH_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 function getMonthLabels() { return _ui('monthNames'); }
 
+// Month names in every supported CV language, so a date stored as "kwi 2020"
+// or "Kwiecień 2020" is still recognised and not thrown away on the next save.
+function monthIndexFromName(token) {
+    const key = String(token).trim().replace(/\.$/, '').toLowerCase();
+    if (!key) return -1;
+    const tables = [MONTH_NAMES, MONTH_FULL];
+    if (typeof MONTHS_SHORT_I18N !== 'undefined') tables.push(...Object.values(MONTHS_SHORT_I18N));
+    if (typeof UI !== 'undefined') {
+        Object.values(UI).forEach(v => { if (v && v.monthNames) tables.push(v.monthNames); });
+    }
+    for (const table of tables) {
+        const i = table.findIndex(m => String(m).replace(/\.$/, '').toLowerCase() === key);
+        if (i >= 0) return i;
+    }
+    return -1;
+}
+
+// Returns the month/year the selects should show plus the original string, so
+// callers can fall back to it when the value is not expressible in the selects.
 function parseDateStr(dateStr) {
-    if (!dateStr || dateStr.toLowerCase() === 'present') return {month: -1, year: ''};
-    const parts = dateStr.trim().split(' ');
-    if (parts.length === 2) {
-        const mi = MONTH_NAMES.indexOf(parts[0]);
-        if (mi >= 0) return {month: mi, year: parts[1]};
-        const miFull = MONTH_FULL.indexOf(parts[0]);
-        if (miFull >= 0) return {month: miFull, year: parts[1]};
-        const miLower = MONTH_FULL.findIndex(m => m.toLowerCase() === parts[0].toLowerCase());
-        if (miLower >= 0) return {month: miLower, year: parts[1]};
+    const raw = dateStr ? String(dateStr).trim() : '';
+    if (!raw || isPresent(raw)) return {month: -1, year: '', raw};
+    const parts = raw.split(/\s+/);
+    if (parts.length === 2 && /^\d{4}$/.test(parts[1])) {
+        const mi = monthIndexFromName(parts[0]);
+        if (mi >= 0) return {month: mi, year: parts[1], raw};
     }
-    if (/^\d{4}-\d{2}$/.test(dateStr)) {
-        const [y,m] = dateStr.split('-');
-        return {month: parseInt(m,10)-1, year: y};
+    if (/^\d{4}-\d{2}$/.test(raw)) {
+        const [y,m] = raw.split('-');
+        const mi = parseInt(m,10)-1;
+        if (mi >= 0 && mi < 12) return {month: mi, year: y, raw};
     }
-    if (/^\d{4}$/.test(dateStr.trim())) return {month: -1, year: dateStr.trim()};
-    return {month: -1, year: ''};
+    if (/^\d{4}$/.test(raw)) return {month: -1, year: raw, raw};
+    return {month: -1, year: '', raw};
 }
 
 function monthValueToDate(val) {
@@ -1716,22 +1733,40 @@ function readDateFromSelects(container) {
     const ys = container.querySelector('.date-year-sel');
     if (!ys) return '';
     const y = ys.value;
-    if (!y) return '';
+    // A value the selects cannot represent is kept verbatim instead of being
+    // silently dropped. Touching either select clears the fallback.
+    if (!y) return container.dataset.unparsed || '';
     const m = ms ? ms.value : '';
     if (m === '' || m === '-1') return y;
     return `${MONTH_NAMES[parseInt(m,10)]} ${y}`;
 }
 
 function isPresent(dateStr) {
-    return dateStr && dateStr.toLowerCase() === 'present';
+    if (!dateStr) return false;
+    const v = String(dateStr).trim().toLowerCase();
+    if (v === 'present') return true;
+    if (typeof PRESENT_I18N !== 'undefined'
+        && Object.values(PRESENT_I18N).some(x => String(x).toLowerCase() === v)) return true;
+    if (typeof UI !== 'undefined'
+        && Object.values(UI).some(u => u && u.present && String(u.present).toLowerCase() === v)) return true;
+    return false;
 }
 
 function yearOptions(selectedYear) {
     const now = new Date().getFullYear();
-    let opts = `<option value="">${_ui('yearLabel')}</option>`;
-    for (let y = now + 2; y >= 1970; y--) {
-        opts += `<option value="${y}" ${String(y)===String(selectedYear)?'selected':''}>${y}</option>`;
+    const years = [];
+    for (let y = now + 2; y >= 1970; y--) years.push(y);
+    // A stored year outside the default range must still be selectable,
+    // otherwise the select silently drops it.
+    const sel = parseInt(selectedYear, 10);
+    if (sel && !years.includes(sel)) {
+        years.push(sel);
+        years.sort((a, b) => b - a);
     }
+    let opts = `<option value="">${_ui('yearLabel')}</option>`;
+    years.forEach(y => {
+        opts += `<option value="${y}" ${String(y)===String(selectedYear)?'selected':''}>${y}</option>`;
+    });
     return opts;
 }
 
@@ -1743,11 +1778,19 @@ function monthOptions(selectedMonth) {
     return opts;
 }
 
+function unparsedAttr(d) {
+    return (d.raw && !d.year) ? ` data-unparsed="${esc(d.raw)}"` : '';
+}
+
+// Any interaction with the selects means the user is replacing the value,
+// so the verbatim fallback must go.
+const DATE_SEL_ONCHANGE = "this.closest('.date-selects-wrap').removeAttribute('data-unparsed');updatePreview()";
+
 function makeDateFromHtml(cls, dateStr) {
     const d = parseDateStr(dateStr);
-    return `<div class="date-selects-wrap ${cls}">
-        <select class="date-month-sel" onchange="updatePreview()">${monthOptions(d.month)}</select>
-        <select class="date-year-sel" onchange="updatePreview()">${yearOptions(d.year)}</select>
+    return `<div class="date-selects-wrap ${cls}"${unparsedAttr(d)}>
+        <select class="date-month-sel" onchange="${DATE_SEL_ONCHANGE}">${monthOptions(d.month)}</select>
+        <select class="date-year-sel" onchange="${DATE_SEL_ONCHANGE}">${yearOptions(d.year)}</select>
     </div>`;
 }
 
@@ -1756,9 +1799,9 @@ function makeDateToHtml(cls, dateStr, gi, pi) {
     const d = pres ? {month:-1, year:''} : parseDateStr(dateStr);
     const idSuffix = pi !== undefined ? `${gi}-${pi}` : `${gi}`;
     return `<div class="date-present-wrap">
-        <div class="date-selects-wrap ${cls}" style="flex:1">
-            <select class="date-month-sel" ${pres?'disabled':''} onchange="updatePreview()">${monthOptions(d.month)}</select>
-            <select class="date-year-sel" ${pres?'disabled':''} onchange="updatePreview()">${yearOptions(d.year)}</select>
+        <div class="date-selects-wrap ${cls}" style="flex:1"${unparsedAttr(d)}>
+            <select class="date-month-sel" ${pres?'disabled':''} onchange="${DATE_SEL_ONCHANGE}">${monthOptions(d.month)}</select>
+            <select class="date-year-sel" ${pres?'disabled':''} onchange="${DATE_SEL_ONCHANGE}">${yearOptions(d.year)}</select>
         </div>
         <label><input type="checkbox" class="${cls}-present" ${pres?'checked':''} onchange="togglePresent(this, '${cls}', '${idSuffix}')"> ${_ui('present')}</label>
     </div>`;
