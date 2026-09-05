@@ -24,6 +24,20 @@ function wrapLink(href, content, color) {
     return `<a href="${esc(href)}" style="color:${color||'inherit'};text-decoration:none" target="_blank">${content}</a>`;
 }
 
+// A wrapping flex row breaks wherever a zero-height, full-width item sits, so
+// a contact marked break_after pushes the rest of the row onto the next line.
+const CONTACT_LINE_BREAK = '<div class="cv-contact-break"></div>';
+
+function joinContacts(contacts, renderOne, separator) {
+    let out = '';
+    contacts.forEach((c, i) => {
+        if (i > 0 && separator && !contacts[i - 1].break_after) out += separator;
+        out += renderOne(c);
+        if (c.break_after && i < contacts.length - 1) out += CONTACT_LINE_BREAK;
+    });
+    return out;
+}
+
 function photoStyle() {
     const shape = cvData.photo_shape || 'circle';
     const borderSetting = cvData.photo_border || 'auto';
@@ -109,10 +123,10 @@ function renderSidebar(p) {
 
 function renderTopBar(p) {
     const scheme = getScheme();
-    let contactsHtml = (p.contacts||[]).map(c => {
+    let contactsHtml = joinContacts(p.contacts||[], c => {
         const val = c.link ? wrapLink(contactHref(c.icon, c.value), esc(c.value), 'rgba(255,255,255,0.8)') : esc(c.value);
         return `<span class="cv-topbar-contact">${getContactSvg(c.icon,'rgba(255,255,255,0.7)')} ${val}</span>`;
-    }).join('');
+    });
     const photoHtml = renderPhoto(p.photo);
     return `<div class="cv-topbar-header" style="background:${scheme.primary}">${photoHtml}<div class="cv-topbar-info"><div class="cv-topbar-name">${esc(p.name)}</div><div class="cv-topbar-title">${esc(p.title)}</div><div class="cv-topbar-contacts">${contactsHtml}</div></div></div>`;
 }
@@ -120,10 +134,10 @@ function renderTopBar(p) {
 function renderMinimalHeader(p) {
     const scheme = getScheme();
     const hc = getHeadingColor();
-    let contactsHtml = (p.contacts||[]).map(c => {
+    let contactsHtml = joinContacts(p.contacts||[], c => {
         const val = c.link ? wrapLink(contactHref(c.icon, c.value), esc(c.value), '#555') : esc(c.value);
         return `<span class="cv-min-contact">${getContactSvg(c.icon,'#888')} ${val}</span>`;
-    }).join('');
+    });
     const photoHtml = renderPhoto(p.photo);
     return `<div class="cv-minimal-header">${photoHtml}<div class="cv-min-name" style="color:${hc}">${esc(p.name)}</div><div class="cv-min-title">${esc(p.title)}</div><div class="cv-min-line" style="background:${scheme.primary}"></div><div class="cv-min-contacts">${contactsHtml}</div></div>`;
 }
@@ -131,10 +145,10 @@ function renderMinimalHeader(p) {
 function renderExecutiveHeader(p) {
     const scheme = getScheme();
     const hc = getHeadingColor();
-    let contactsHtml = (p.contacts||[]).map(c => {
+    let contactsHtml = joinContacts(p.contacts||[], c => {
         const val = c.link ? wrapLink(contactHref(c.icon, c.value), esc(c.value), hc) : esc(c.value);
         return `<span class="cv-exec-contact">${getContactSvg(c.icon, scheme.light)} ${val}</span>`;
-    }).join('<span class="cv-exec-sep">|</span>');
+    }, '<span class="cv-exec-sep">|</span>');
     const photoHtml = renderPhoto(p.photo);
     return `<div class="cv-executive-header">${photoHtml}<div class="cv-exec-name" style="color:${hc}">${esc(p.name)}</div><div class="cv-exec-title">${esc(p.title)}</div><div class="cv-exec-bar" style="background:${scheme.primary}"></div><div class="cv-exec-contacts">${contactsHtml}</div></div>`;
 }
