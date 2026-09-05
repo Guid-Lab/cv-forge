@@ -529,7 +529,10 @@ function collectData() {
     document.querySelectorAll('#contacts-list .contact-row').forEach(row => {
         const icon = row.querySelector('.contact-type').value;
         const linkCb = row.querySelector('.contact-link-toggle');
-        contacts.push({ type: icon, icon: icon, label: '', value: row.querySelector('.contact-value').value, link: linkCb ? linkCb.checked : false });
+        const breakCb = row.querySelector('.contact-break-toggle');
+        contacts.push({ type: icon, icon: icon, label: '', value: row.querySelector('.contact-value').value,
+                        link: linkCb ? linkCb.checked : false,
+                        break_after: breakCb ? breakCb.checked : false });
     });
     const photo = cvData.personal && cvData.personal.photo || '';
     cvData.personal = { name: document.getElementById('personal-name').value, title: document.getElementById('personal-title').value, photo, contacts };
@@ -683,11 +686,12 @@ function renderContactsList() {
         d.innerHTML = `<select class="contact-type" onchange="onContactTypeChange(${i},this)">${opts}</select>
             <input type="text" class="contact-value" value="${esc(ct.value)}" placeholder="${_ui('valuePlaceholder')}" onchange="updatePreview()">
             ${linkable ? `<label class="contact-link-wrap" title="Link"><input type="checkbox" class="contact-link-toggle" ${ct.link?'checked':''} onchange="updatePreview()"><span class="link-icon">&#128279;</span></label>` : '<span style="width:28px"></span>'}
+            <label class="contact-break-wrap" title="${esc(_ui('breakAfterHint'))}"><input type="checkbox" class="contact-break-toggle" ${ct.break_after?'checked':''} onchange="updatePreview()"><span class="break-icon">&#8629;</span></label>
             <button class="btn-remove-item" onclick="removeContact(${i})">&times;</button>`;
         c.appendChild(d);
     });
 }
-function addContact() { collectData(); cvData.personal.contacts.push({type:'website',icon:'website',label:'',value:'',link:false}); renderContactsList(); updatePreview(); }
+function addContact() { collectData(); cvData.personal.contacts.push({type:'website',icon:'website',label:'',value:'',link:false,break_after:false}); renderContactsList(); updatePreview(); }
 function removeContact(i) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.personal.contacts.splice(i,1); renderContactsList(); updatePreview(); }); }
 function onContactTypeChange(i, sel) { collectData(); cvData.personal.contacts[i].icon = sel.value; if (sel.value === 'location') cvData.personal.contacts[i].link = false; renderContactsList(); updatePreview(); }
 

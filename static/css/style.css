@@ -204,6 +204,10 @@ body {
 .contact-link-wrap input[type="checkbox"] { display: none; }
 .contact-link-wrap .link-icon { font-size: 14px; opacity: 0.3; transition: all 0.15s; }
 .contact-link-wrap input:checked + .link-icon { opacity: 1; color: var(--accent); }
+.contact-break-wrap { display: flex; align-items: center; cursor: pointer; flex-shrink: 0; }
+.contact-break-wrap input[type="checkbox"] { display: none; }
+.contact-break-wrap .break-icon { font-size: 14px; opacity: 0.3; transition: all 0.15s; }
+.contact-break-wrap input:checked + .break-icon { opacity: 1; color: var(--accent); }
 
 .employer-group-card { border: 2px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; background: white; overflow: hidden; }
 .employer-group-card.is-hidden { opacity: 0.45; border-style: dashed; }
@@ -317,6 +321,9 @@ body {
 .cv-topbar-title { font-size: 11px; letter-spacing: 2px; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-bottom: 14px; }
 .cv-topbar-contacts { display: flex; flex-wrap: wrap; gap: 16px; }
 .cv-topbar-contact { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; color: rgba(255,255,255,0.8); }
+
+/* Forces the rest of a wrapping contact row onto the next line. */
+.cv-contact-break { flex-basis: 100%; height: 0; }
 
 .cv-minimal-header { text-align: center; padding-bottom: 14px; margin-bottom: 10px; }
 .cv-minimal-header .cv-photo { width: 80px; height: 80px; object-fit: cover; margin: 0 auto 12px; display: block; }
