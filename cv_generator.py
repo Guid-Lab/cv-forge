@@ -719,6 +719,10 @@ def generate_docx(data):
     doc = Document()
 
     for section in doc.sections:
+        # python-docx defaults to US Letter; the visual PDF is A4, so keep both
+        # exports on the same paper.
+        section.page_width = Cm(21)
+        section.page_height = Cm(29.7)
         section.top_margin = Cm(1.5)
         section.bottom_margin = Cm(1.5)
         section.left_margin = Cm(2)
