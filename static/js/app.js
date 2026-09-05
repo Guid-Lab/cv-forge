@@ -381,6 +381,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let _resizeTimer;
     window.addEventListener('resize', () => { clearTimeout(_resizeTimer); _resizeTimer = setTimeout(() => updatePreview(), 250); });
+    initTabArrows();
 });
 
 function renderAll() {
@@ -460,7 +461,34 @@ function switchTab(btn) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    btn.scrollIntoView({block: 'nearest', inline: 'nearest'});
     try { localStorage.setItem('cv_active_tab', btn.dataset.tab); } catch(e) {}
+}
+
+// The tab strip hides its scrollbar, so the arrows are the only sign that
+// there are more tabs than fit. They show only while there is room to move.
+function scrollTabs(direction) {
+    const tabs = document.getElementById('panel-tabs');
+    if (!tabs) return;
+    tabs.scrollBy({left: direction * Math.max(120, tabs.clientWidth * 0.6), behavior: 'smooth'});
+}
+
+function updateTabArrows() {
+    const tabs = document.getElementById('panel-tabs');
+    const wrap = tabs && tabs.closest('.panel-tabs-wrap');
+    if (!wrap) return;
+    const max = tabs.scrollWidth - tabs.clientWidth;
+    wrap.classList.toggle('can-scroll-left', tabs.scrollLeft > 1);
+    wrap.classList.toggle('can-scroll-right', tabs.scrollLeft < max - 1);
+}
+
+function initTabArrows() {
+    const tabs = document.getElementById('panel-tabs');
+    if (!tabs) return;
+    tabs.addEventListener('scroll', updateTabArrows, {passive: true});
+    window.addEventListener('resize', updateTabArrows);
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateTabArrows).observe(tabs);
+    updateTabArrows();
 }
 
 function populateForm() {
@@ -598,6 +626,7 @@ function collectData() {
             date_from: readDateFromSelects(card.querySelector('.proj-from')),
             date_to: dateTo,
             description: card.querySelector('.proj-desc') ? card.querySelector('.proj-desc').value : '',
+            logo: card.dataset.logo || '',
         });
     });
 
@@ -1032,9 +1061,20 @@ function renderProjectsList() {
     (cvData.projects||[]).forEach((proj, i) => {
         const card = document.createElement('div');
         card.className = 'entry-card';
+        card.dataset.logo = proj.logo || '';
+
+        const logoPreview = proj.logo
+            ? `<img src="${esc(proj.logo)}" class="logo-thumb-sm">`
+            : `<div class="logo-placeholder-sm" style="background:${getColor(proj.name)}">${getInitials(proj.name||'?')}</div>`;
+
         card.innerHTML = `
             <div class="entry-card-header">
-                <span class="entry-card-title">${_ui('tabProjects')} ${i+1}</span>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <div class="cert-logo-area logo-clickable" onclick="showProjectLogoMenu(${i}, this)">
+                        ${logoPreview}
+                    </div>
+                    <span class="entry-card-title">${_ui('tabProjects')} ${i+1}</span>
+                </div>
                 <div class="entry-card-actions">
                     <button class="move-btn" onclick="moveProject(${i},-1)">&#9650;</button>
                     <button class="move-btn" onclick="moveProject(${i},1)">&#9660;</button>
@@ -1052,7 +1092,24 @@ function renderProjectsList() {
         c.appendChild(card);
     });
 }
-function addProject() { collectData(); if(!cvData.projects) cvData.projects=[]; cvData.projects.push({name:'',role:'',url:'',date_from:'',date_to:'',description:''}); renderProjectsList(); updatePreview(); }
+function showProjectLogoMenu(i, el) {
+    collectData();
+    const proj = cvData.projects[i];
+    showLogoMenu(el, {
+        hasLogo: !!proj.logo,
+        hasUrl: !!proj.url,
+        onUpload: async (file) => {
+            const url = await uploadLogoFile(file);
+            if (url) { collectData(); cvData.projects[i].logo = url; renderProjectsList(); updatePreview(); showToast(_ui('toastLogoUploaded')); }
+        },
+        onFetch: async () => {
+            const url = await fetchLogoFromUrl(cvData.projects[i].url);
+            if (url) { collectData(); cvData.projects[i].logo = url; renderProjectsList(); updatePreview(); }
+        },
+        onRemove: () => { collectData(); cvData.projects[i].logo = ''; renderProjectsList(); updatePreview(); showToast(_ui('toastLogoRemoved')); },
+    });
+}
+function addProject() { collectData(); if(!cvData.projects) cvData.projects=[]; cvData.projects.push({name:'',role:'',url:'',date_from:'',date_to:'',description:'',logo:''}); renderProjectsList(); updatePreview(); }
 function removeProject(i) { appConfirm(_ui('remove')+'?', () => { collectData(); cvData.projects.splice(i,1); renderProjectsList(); updatePreview(); }); }
 function moveProject(i,dir) { collectData(); const a=cvData.projects,ni=i+dir; if(ni<0||ni>=a.length)return; [a[i],a[ni]]=[a[ni],a[i]]; renderProjectsList(); updatePreview(); }
 
