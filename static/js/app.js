@@ -274,10 +274,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     let loadedFromToken = false;
     const params = new URLSearchParams(window.location.search);
     const loadToken = params.get('load');
+    let loadTokenFailed = false;
     if (loadToken) {
         window.history.replaceState({}, '', '/');
         try {
             const resp = await fetch('/api/load-data/' + encodeURIComponent(loadToken));
+            if (!resp.ok) loadTokenFailed = true;
             if (resp.ok) {
                 const parsed = await resp.json();
                 if (parsed && typeof parsed === 'object') {
@@ -296,8 +298,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     loadedFromToken = true;
                 }
             }
-        } catch(e) {}
+        } catch(e) { loadTokenFailed = true; }
     }
+    // The link carries a short-lived token that lives in the server's memory.
+    // Failing silently leaves the previous CV on screen and looks like the link
+    // simply did nothing, so say what happened.
+    if (loadTokenFailed) setTimeout(() => showToast(_ui('loadLinkExpired'), true), 400);
     if (!loadedFromToken) {
         const stored = localStorage.getItem('cv_data');
         if (stored) {
